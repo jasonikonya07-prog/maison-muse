@@ -7,6 +7,7 @@ import {
   fetchMarketplaceVendorWarnings,
   reviewMarketplaceVendor,
   updateMarketplaceVendor,
+  updateMarketplaceVendorMaintenance,
 } from "../../services/api.js";
 import "../../seller/Marketplace.css";
 
@@ -15,7 +16,7 @@ const SAVED_FILTER_KEY = "mm-admin-marketplace-vendor-filter";
 function readFilter() {
   try {
     const saved = window.localStorage.getItem(SAVED_FILTER_KEY);
-    return ["all", "pending", "active", "suspended", "audit"].includes(saved)
+    return ["all", "pending", "active", "suspended", "audit", "maintenance"].includes(saved)
       ? saved
       : "all";
   } catch {
@@ -24,6 +25,7 @@ function readFilter() {
 }
 
 function statusOf(vendor) {
+  if (vendor.maintenance_mode) return "MAINTENANCE";
   if (vendor.review_state === "UNDER_AUDIT") return "UNDER_AUDIT";
   if (vendor.status === "APPROVED") return "ACTIVE";
   return vendor.status;
@@ -38,6 +40,8 @@ function VendorManager() {
   const [reviewTarget, setReviewTarget] = useState(null);
   const [reviewAction, setReviewAction] = useState("");
   const [reviewReason, setReviewReason] = useState("");
+  const [maintenanceTarget, setMaintenanceTarget] = useState(null);
+  const [maintenanceReason, setMaintenanceReason] = useState("");
   const [warningTarget, setWarningTarget] = useState(null);
   const [warningSummary, setWarningSummary] = useState("");
   const [warningReference, setWarningReference] = useState("");
@@ -68,6 +72,7 @@ function VendorManager() {
   const filteredVendors = useMemo(() => (data?.vendors ?? []).filter((vendor) => {
     if (filter === "pending") return vendor.status === "PENDING";
     if (filter === "active") return statusOf(vendor) === "ACTIVE";
+    if (filter === "maintenance") return Boolean(vendor.maintenance_mode);
     if (filter === "suspended") return vendor.status === "SUSPENDED";
     if (filter === "audit") return statusOf(vendor) === "UNDER_AUDIT";
     return true;
@@ -88,6 +93,36 @@ function VendorManager() {
     } finally {
       setBusy(false);
     }
+  };
+
+  const changeMaintenance = async () => {
+    if (!maintenanceTarget) return;
+    const enabled = !maintenanceTarget.maintenance_mode;
+    if (enabled && maintenanceReason.trim().length < 3) {
+      setError("Enter a reason of at least 3 characters before enabling maintenance.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      await updateMarketplaceVendorMaintenance(maintenanceTarget.id, {
+        enabled,
+        reason: enabled ? maintenanceReason.trim() : "",
+      });
+      setMaintenanceTarget(null);
+      setMaintenanceReason("");
+      await refresh();
+    } catch (updateError) {
+      setError(updateError.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const openMaintenance = (vendor) => {
+    setMaintenanceTarget(vendor);
+    setMaintenanceReason("");
+    setError("");
   };
 
   const openReview = (vendor, action) => {
@@ -172,7 +207,7 @@ function VendorManager() {
         <header className="vendor-governance-toolbar">
           <div><span className="marketplace-eyebrow">SELLER DIRECTORY</span><h2>Applications &amp; verified sellers <small>{filteredVendors.length}</small></h2></div>
           <label>Filter sellers<select value={filter} onChange={(event) => setFilter(event.target.value)}>
-            <option value="all">All sellers</option><option value="pending">Pending review</option><option value="active">Active</option><option value="suspended">Suspended</option><option value="audit">Under audit</option>
+            <option value="all">All sellers</option><option value="pending">Pending review</option><option value="active">Active</option><option value="maintenance">Under maintenance</option><option value="suspended">Suspended</option><option value="audit">Under audit</option>
           </select></label>
         </header>
         {filteredVendors.length ? <div className="vendor-list">
@@ -187,6 +222,7 @@ function VendorManager() {
                 </div>
                 <span className={`seller-status-badge ${vendorStatus.toLowerCase()}`}>{vendorStatus.replace("_", " ")}</span>
               </header>
+              {vendor.maintenance_mode && <p className="vendor-review-note"><strong>Maintenance reason:</strong> {vendor.maintenance_reason || "No reason recorded."}</p>}
               {vendor.review_note && <p className="vendor-review-note"><strong>Latest review:</strong> {vendor.review_note}</p>}
               <div className="vendor-card-meta">
                 <span>Live products <strong>{vendor.live_product_count}</strong></span>
@@ -206,6 +242,7 @@ function VendorManager() {
                   <button type="button" className="marketplace-button secondary" disabled={busy} onClick={() => openReview(vendor, "UNDER_AUDIT")}>Place under audit</button>
                   <button type="button" className="marketplace-button secondary" disabled={busy} onClick={() => openReview(vendor, "SUSPEND")}>Suspend seller</button>
                 </>}
+                {vendor.status === "APPROVED" && <button type="button" className={`marketplace-button ${vendor.maintenance_mode ? "primary" : "secondary"}`} disabled={busy} onClick={() => openMaintenance(vendor)}>{vendor.maintenance_mode ? "End maintenance" : "Place under maintenance"}</button>}
                 {(vendor.status === "SUSPENDED" || vendor.review_state === "UNDER_AUDIT") && <button type="button" className="marketplace-button primary" disabled={busy} onClick={() => openReview(vendor, "RESTORE")}>Restore seller</button>}
                 {vendor.status !== "PENDING" && <a className="marketplace-button secondary" href={`/store/${encodeURIComponent(vendor.store_slug)}`} target="_blank" rel="noreferrer">View public store</a>}
                 <button type="button" className="marketplace-button secondary" disabled={busy || warningBusy} onClick={() => openWarning(vendor)}><Mail size={15} /> Send complaint warning</button>
@@ -214,6 +251,18 @@ function VendorManager() {
           })}
         </div> : <p className="marketplace-empty">No sellers match this filter.</p>}
       </section>
+      {maintenanceTarget && <div className="marketplace-modal-backdrop" onMouseDown={() => !busy && setMaintenanceTarget(null)}>
+        <section className="marketplace-modal vendor-review-modal" role="dialog" aria-modal="true" aria-labelledby="seller-maintenance-title" onMouseDown={(event) => event.stopPropagation()}>
+          <header><div><span className="marketplace-eyebrow">SELLER OPERATIONS</span><h2 id="seller-maintenance-title">{maintenanceTarget.maintenance_mode ? "End seller maintenance" : "Place seller under maintenance"}</h2></div></header>
+          <p>Store: <strong>{maintenanceTarget.store_name}</strong></p>
+          {maintenanceTarget.maintenance_mode
+            ? <p>This will restore the public storefront and allow the seller to manage their store again.</p>
+            : <><p>The seller’s public store and products will be hidden, and store-management actions will be paused. Existing account and order records remain unchanged.</p>
+              <label className="marketplace-review-reason">Reason for maintenance<textarea autoFocus required minLength="3" rows="4" maxLength="1000" value={maintenanceReason} onChange={(event) => setMaintenanceReason(event.target.value)} placeholder="For example: temporary compliance review or store data updates." /></label></>}
+          {error && <p className="marketplace-error" role="alert">{error}</p>}
+          <footer><button type="button" className="marketplace-button secondary" disabled={busy} onClick={() => setMaintenanceTarget(null)}>Cancel</button><button type="button" className="marketplace-button primary" disabled={busy || (!maintenanceTarget.maintenance_mode && maintenanceReason.trim().length < 3)} onClick={changeMaintenance}>{busy ? "Saving…" : maintenanceTarget.maintenance_mode ? "End maintenance" : "Confirm maintenance"}</button></footer>
+        </section>
+      </div>}
       {reviewTarget && <div className="marketplace-modal-backdrop" onMouseDown={() => setReviewTarget(null)}>
         <section className="marketplace-modal vendor-review-modal" role="dialog" aria-modal="true" aria-labelledby="vendor-review-title" onMouseDown={(event) => event.stopPropagation()}>
           <header><div><span className="marketplace-eyebrow">SELLER REVIEW</span><h2 id="vendor-review-title">{reviewAction === "REQUEST_INFO" ? "Request additional information" : reviewAction === "REJECT" ? "Reject seller application" : reviewAction === "UNDER_AUDIT" ? "Place seller under audit" : reviewAction === "SUSPEND" ? "Suspend seller" : reviewAction === "RESTORE" ? "Restore seller access" : "Approve seller"}</h2></div></header>

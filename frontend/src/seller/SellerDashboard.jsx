@@ -1001,6 +1001,34 @@ function SellerDashboard() {
     );
   }
 
+  if (seller.maintenance_mode && !demoMode) {
+    return (
+      <main className="seller-suspension-screen">
+        <header className="seller-topbar">
+          <Link className="marketplace-brand" to="/">maison <span>muse.</span></Link>
+          <div className="seller-topbar-actions">
+            <span className="seller-status-badge maintenance">MAINTENANCE</span>
+            <button type="button" className="marketplace-button secondary" onClick={handleLogout}>
+              <LogOut size={15} /> Sign out
+            </button>
+          </div>
+        </header>
+        <section className="seller-suspension-card" role="status">
+          <span className="seller-suspension-icon"><Store size={25} /></span>
+          <span className="marketplace-eyebrow">SELLER ACCOUNT ACCESS</span>
+          <h1>Your store is under maintenance</h1>
+          <p>Seller Studio tools and public listings are temporarily unavailable while Maison Muse completes this maintenance period.</p>
+          <div className="seller-suspension-reason">
+            <strong>Reason provided by Maison Muse</strong>
+            <p>{seller.maintenance_reason || "Please contact Maison Muse support for more information."}</p>
+          </div>
+          <p className="seller-suspension-help">Contact Maison Muse support if you need assistance with <strong>{seller.store_name}</strong>.</p>
+          <Link className="marketplace-button secondary" to="/">Return to storefront</Link>
+        </section>
+      </main>
+    );
+  }
+
   const navItems = [
     { id: "overview", label: "Overview & Analytics", icon: LayoutDashboard },
     { id: "products", label: "Product Inventory", icon: Package },

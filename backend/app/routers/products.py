@@ -250,7 +250,7 @@ def list_products(
             parameters.extend(category_names)
             parameters.extend(category_values)
     conditions.append("p.active = 1 AND p.product_status = 'ACTIVE'")
-    conditions.append("(p.seller_id IS NULL OR (s.status = 'APPROVED' AND s.review_state = 'CLEAR'))")
+    conditions.append("(p.seller_id IS NULL OR (s.status = 'APPROVED' AND s.review_state = 'CLEAR' AND s.maintenance_mode = 0))")
     if deals:
         conditions.append(
             "(COALESCE(p.old_price, 0) > p.price OR trim(COALESCE(p.discount, '')) != '')"
@@ -338,7 +338,7 @@ def list_products_by_category(
 ) -> list[dict]:
     conditions = [
         "p.active = 1 AND p.product_status = 'ACTIVE'",
-        "(p.seller_id IS NULL OR (s.status = 'APPROVED' AND s.review_state = 'CLEAR'))",
+        "(p.seller_id IS NULL OR (s.status = 'APPROVED' AND s.review_state = 'CLEAR' AND s.maintenance_mode = 0))",
         "(lower(p.category_slug) = lower(?) OR EXISTS (SELECT 1 FROM categories c WHERE c.slug = lower(?) AND lower(c.name) = lower(p.category)))",
     ]
     parameters: list[object] = [category_slug, category_slug]
@@ -383,7 +383,7 @@ def list_categories() -> list[str]:
             SELECT DISTINCT p.category FROM products p
             LEFT JOIN sellers s ON s.id = p.seller_id
             WHERE p.active = 1 AND p.product_status = 'ACTIVE'
-              AND (p.seller_id IS NULL OR (s.status = 'APPROVED' AND s.review_state = 'CLEAR'))
+              AND (p.seller_id IS NULL OR (s.status = 'APPROVED' AND s.review_state = 'CLEAR' AND s.maintenance_mode = 0))
             ORDER BY p.category
             """
         ).fetchall()
@@ -408,7 +408,7 @@ def get_product(product_id: str) -> dict:
             FROM products p
             LEFT JOIN sellers s ON s.id = p.seller_id
             WHERE p.id = ? AND p.active = 1 AND p.product_status = 'ACTIVE'
-              AND (p.seller_id IS NULL OR (s.status = 'APPROVED' AND s.review_state = 'CLEAR'))
+              AND (p.seller_id IS NULL OR (s.status = 'APPROVED' AND s.review_state = 'CLEAR' AND s.maintenance_mode = 0))
             """,
             (product_id,),
         ).fetchone()

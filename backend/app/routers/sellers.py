@@ -106,6 +106,8 @@ def _seller_payload(row: sqlite3.Row, include_payout: bool = False) -> dict:
         "submitted_documents": json.loads(row["submitted_documents_json"]),
         "review_note": row["review_note"],
         "review_state": row["review_state"],
+        "maintenance_mode": bool(row["maintenance_mode"]),
+        "maintenance_reason": row["maintenance_reason"],
         "store_slug": row["store_slug"],
         "logo_url": row["logo_url"],
         "banner_url": row["banner_url"],
@@ -208,6 +210,12 @@ def require_seller(
         raise HTTPException(
             status_code=403,
             detail="Your seller account must be approved before managing the store.",
+        )
+    if approved and seller["maintenance_mode"]:
+        reason = seller["maintenance_reason"].strip() or "No additional reason was provided."
+        raise HTTPException(
+            status_code=403,
+            detail=f"Your seller store is under maintenance. Reason: {reason}",
         )
     request.state.seller = seller
     return seller
@@ -504,6 +512,7 @@ def public_store(store_slug: str) -> dict:
                    instagram_url, tiktok_url, operating_hours, holiday_mode
             FROM sellers
             WHERE store_slug = ? AND status = 'APPROVED' AND review_state = 'CLEAR'
+              AND maintenance_mode = 0
             """,
             (store_slug,),
         ).fetchone()
@@ -523,6 +532,7 @@ def public_store(store_slug: str) -> dict:
             WHERE p.seller_id = ? AND p.active = 1
               AND p.product_status = 'ACTIVE'
               AND s.status = 'APPROVED' AND s.review_state = 'CLEAR'
+              AND s.maintenance_mode = 0
             ORDER BY p.name
             """,
             (seller["id"],),

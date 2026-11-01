@@ -1,13 +1,24 @@
 import json
 import sqlite3
 from contextlib import contextmanager
-from typing import Iterator
+from typing import Any, Iterator
 
-from app.config import get_database_path
+from app.config import get_database_path, get_database_url
 
 
 @contextmanager
-def get_connection() -> Iterator[sqlite3.Connection]:
+def get_connection() -> Iterator[Any]:
+    database_url = get_database_url()
+    if database_url:
+        from app.postgres_compat import connect_postgres
+
+        connection = connect_postgres(database_url)
+        try:
+            yield connection
+        finally:
+            connection.close()
+        return
+
     database_path = get_database_path()
     database_path.parent.mkdir(parents=True, exist_ok=True)
     connection = sqlite3.connect(database_path, timeout=10)
@@ -20,7 +31,7 @@ def get_connection() -> Iterator[sqlite3.Connection]:
         connection.close()
 
 
-def initialize_database() -> None:
+def initialize_database(seed_initial_data: bool = True) -> None:
     with get_connection() as connection:
         connection.executescript(
             """
@@ -60,6 +71,9 @@ def initialize_database() -> None:
                 business_registration_number TEXT NOT NULL DEFAULT '',
                 status TEXT NOT NULL DEFAULT 'PENDING'
                     CHECK (status IN ('PENDING', 'APPROVED', 'SUSPENDED')),
+                maintenance_mode INTEGER NOT NULL DEFAULT 0
+                    CHECK (maintenance_mode IN (0, 1)),
+                maintenance_reason TEXT NOT NULL DEFAULT '',
                 owner_name TEXT NOT NULL DEFAULT '',
                 submitted_documents_json TEXT NOT NULL DEFAULT '[]',
                 review_note TEXT NOT NULL DEFAULT '',
@@ -443,6 +457,7 @@ def initialize_database() -> None:
                 buyer_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
                 customer_name TEXT NOT NULL,
                 customer_phone TEXT NOT NULL,
+                customer_phone_lookup_hash TEXT NOT NULL DEFAULT '',
                 delivery_address TEXT NOT NULL,
                 payment_method TEXT NOT NULL
                     CHECK (payment_method IN ('mobile-money', 'card', 'pesapal')),
@@ -820,6 +835,7 @@ def initialize_database() -> None:
         for column, definition in {
             "tracking_id": "TEXT NOT NULL DEFAULT ''",
             "buyer_id": "INTEGER REFERENCES users(id) ON DELETE SET NULL",
+            "customer_phone_lookup_hash": "TEXT NOT NULL DEFAULT ''",
             "updated_at": "TEXT NOT NULL DEFAULT ''",
         }.items():
             if column not in order_columns:
@@ -852,6 +868,8 @@ def initialize_database() -> None:
         }
         seller_migrations = {
             "store_bio": "TEXT NOT NULL DEFAULT ''",
+            "maintenance_mode": "INTEGER NOT NULL DEFAULT 0",
+            "maintenance_reason": "TEXT NOT NULL DEFAULT ''",
             "business_category": "TEXT NOT NULL DEFAULT ''",
             "business_type": "TEXT NOT NULL DEFAULT ''",
             "whatsapp_phone": "TEXT NOT NULL DEFAULT ''",
@@ -1001,6 +1019,7 @@ def initialize_database() -> None:
                         buyer_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
                         customer_name TEXT NOT NULL,
                         customer_phone TEXT NOT NULL,
+                        customer_phone_lookup_hash TEXT NOT NULL DEFAULT '',
                         delivery_address TEXT NOT NULL,
                         payment_method TEXT NOT NULL
                             CHECK (payment_method IN ('mobile-money', 'card', 'pesapal')),
@@ -1025,7 +1044,7 @@ def initialize_database() -> None:
                     """
                     INSERT INTO orders (
                         id, order_number, tracking_id, buyer_id, customer_name, customer_phone,
-                        delivery_address, payment_method, payment_gateway,
+                        customer_phone_lookup_hash, delivery_address, payment_method, payment_gateway,
                         gateway_reference, gateway_tracking_id, gateway_status,
                         mpesa_phone,
                         status, payment_status, subtotal_cents, shipping_cents,
@@ -1034,7 +1053,7 @@ def initialize_database() -> None:
                     )
                     SELECT
                         id, order_number, tracking_id, buyer_id, customer_name, customer_phone,
-                        delivery_address, payment_method, payment_gateway,
+                        customer_phone_lookup_hash, delivery_address, payment_method, payment_gateway,
                         gateway_reference, gateway_tracking_id, gateway_status,
                         mpesa_phone,
                         status, payment_status, subtotal_cents, shipping_cents,
@@ -1055,6 +1074,13 @@ def initialize_database() -> None:
             """
             CREATE UNIQUE INDEX IF NOT EXISTS idx_orders_tracking_id
             ON orders(tracking_id) WHERE tracking_id != ''
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_orders_customer_phone_lookup_hash
+            ON orders(customer_phone_lookup_hash, created_at DESC)
+            WHERE customer_phone_lookup_hash != ''
             """
         )
         all_access = {
@@ -1088,38 +1114,46 @@ def initialize_database() -> None:
             },
         }
         all_access["support"] = {"read": True, "write": True}
-        connection.executemany(
-            """
-            INSERT OR IGNORE INTO admin_role_permissions (role, permissions_json)
-            VALUES (?, ?)
-            """,
-            [
-                (role, json.dumps(permissions))
-                for role, permissions in default_roles.items()
-            ],
-        )
-        for role, permissions_json in connection.execute(
-            "SELECT role, permissions_json FROM admin_role_permissions"
-        ).fetchall():
-            permissions = json.loads(permissions_json)
-            if "support" not in permissions:
-                permissions["support"] = default_roles.get(role, {}).get(
-                    "support", {"read": False, "write": False}
-                )
-                connection.execute(
-                    "UPDATE admin_role_permissions SET permissions_json = ? WHERE role = ?",
-                    (json.dumps(permissions), role),
-                )
-        connection.execute(
-            """
-            INSERT OR IGNORE INTO store_settings (key, value)
-            VALUES ('marketplace_default_commission', '10')
-            """
-        )
+        if seed_initial_data:
+            connection.executemany(
+                """
+                INSERT OR IGNORE INTO admin_role_permissions (role, permissions_json)
+                VALUES (?, ?)
+                """,
+                [
+                    (role, json.dumps(permissions))
+                    for role, permissions in default_roles.items()
+                ],
+            )
+            for row in connection.execute(
+                "SELECT role, permissions_json FROM admin_role_permissions"
+            ).fetchall():
+                role = row["role"]
+                permissions_json = row["permissions_json"]
+                permissions = json.loads(permissions_json)
+                if "support" not in permissions:
+                    permissions["support"] = default_roles.get(role, {}).get(
+                        "support", {"read": False, "write": False}
+                    )
+                    connection.execute(
+                        "UPDATE admin_role_permissions SET permissions_json = ? WHERE role = ?",
+                        (json.dumps(permissions), role),
+                    )
+            connection.execute(
+                """
+                INSERT OR IGNORE INTO store_settings (key, value)
+                VALUES ('marketplace_default_commission', '10')
+                """
+            )
 
-        from app.catalog_seed import seed_products
+            from app.catalog_seed import seed_products
 
-        seed_products(connection)
+            seed_products(connection)
+        encrypt_existing_sensitive_data = getattr(
+            connection, "encrypt_existing_sensitive_data", None
+        )
+        if encrypt_existing_sensitive_data is not None:
+            encrypt_existing_sensitive_data()
         connection.commit()
 
 

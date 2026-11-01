@@ -2,7 +2,8 @@
 
 This FastAPI service powers the storefront catalog and processes orders through
 Pesapal API 3.0. It
-uses SQLite for local persistence and synchronizes its catalog from
+uses SQLite for local development by default, or PostgreSQL when `DATABASE_URL`
+is configured. Its catalog synchronizes from
 `frontend/src/data/products.json` at startup. The shared catalog contains 25
 products across perfumes and fragrances, press-on nails, skincare and glow,
 lip and makeup essentials, and hair and accessories.
@@ -32,6 +33,57 @@ documentation is at `http://127.0.0.1:8000/docs`.
 The frontend's Vite development proxy already forwards `/api` requests to this
 address. To use a different backend host, set `VITE_API_PROXY_TARGET` in
 `frontend/.env.local`.
+
+## Deploy frontend to Vercel and API to Render
+
+The deployment configuration is in `frontend/vercel.json` and the repository
+root `render.yaml`.
+
+### Render API
+
+1. Rotate any database password shared in chat, then create the new Supabase
+   transaction-pooler URL. Do not put database credentials in source files or
+   share them in chat.
+2. Before deploying the API, import the existing local database into the
+   empty Supabase database using the steps in **Migrate SQLite data to
+   Supabase** below. Use the rotated `DATABASE_URL` privately for the one-time
+   import. Do not import into a database already containing live marketplace
+   records.
+3. In Render, create a Blueprint from this repository and review the service
+   settings before applying. It deploys `maison-muse-api` from `backend/`,
+   installs `backend/requirements.txt`, runs Uvicorn on Render's assigned port,
+   and checks `/api/health`.
+4. Add the prompted secret values in Render. Set `DATABASE_URL` to the URL with
+   the rotated password and `CORS_ORIGINS` to the exact Vercel production
+   origin(s), comma-separated and without trailing slashes. Add a strong unique
+   `ADMIN_USERNAME`/`ADMIN_PASSWORD`, a matching Google OAuth client ID, and
+   payment credentials/URLs if enabling Pesapal. Keep Pesapal in sandbox until
+   merchant onboarding is complete.
+5. The blueprint provisions a 1 GB persistent disk for seller image uploads.
+   Render persistent disks require a paid web-service instance and keep the API
+   to one instance; the support/order WebSockets also use in-process state, so
+   do not scale this service horizontally without adding shared storage and
+   pub/sub.
+
+### Vercel storefront
+
+1. Import the repository in Vercel and set the project **Root Directory** to
+   `frontend`. Vercel uses `frontend/vercel.json` for client-side route
+   fallback; the Vite build outputs to `dist`.
+2. Set `VITE_API_BASE_URL` to the Render API origin, e.g.
+   `https://maison-muse-api.onrender.com` (no trailing slash). Set
+   `VITE_GOOGLE_CLIENT_ID` to the same web client ID used by the backend.
+   These are frontend build variables, not backend secrets.
+3. Deploy the site, copy its exact production domain (and any `www` domain),
+   then set those origins in Render's `CORS_ORIGINS` and redeploy the API.
+4. In Google Cloud Console, add the Vercel domain to the OAuth web client's
+   authorized JavaScript origins. For Pesapal, use the public Vercel return
+   URL and Render IPN URL, register the IPN URL with Pesapal, and configure
+   the resulting IPN ID in Render.
+
+Do not set `VITE_API_BASE_URL` to a Supabase URL: the browser must call the
+FastAPI service, which connects to Supabase privately. Supabase credentials
+belong only in Render's `DATABASE_URL` secret.
 
 ## Endpoints
 
@@ -89,7 +141,7 @@ address. To use a different backend host, set `VITE_API_PROXY_TARGET` in
 - `GET /api/payments/pesapal/ipn` — receives Pesapal IPN notifications and
   verifies status server-to-server before changing payment state.
 - `POST /api/newsletter` — validates an email address and saves the signup to
-  SQLite. Email campaign delivery is not configured.
+  the configured database. Email campaign delivery is not configured.
 
 An order request has this shape:
 
@@ -130,10 +182,67 @@ threshold; the estimate includes 8% tax.
 ## Configuration
 
 Copy `.env.example` to `.env`, set the Pesapal and other required values, and
-configure `DATABASE_PATH` or `CORS_ORIGINS` as needed. The application reads
+configure `DATABASE_PATH`, `DATABASE_URL`, or `CORS_ORIGINS` as needed. The application reads
 environment variables directly; for convenience, the example values can also
 be exported in the shell before starting Uvicorn.
-The default SQLite database is created at `backend/data/maison_muse.sqlite3`.
+Without `DATABASE_URL`, SQLite is created at
+`backend/data/maison_muse.sqlite3`. In production, set `DATABASE_URL` to the
+Supabase PostgreSQL transaction-pooler connection string. Keep it private and
+store it as a Render environment secret; do not commit it or put it in the
+frontend.
+
+For PostgreSQL, also set `DATA_ENCRYPTION_KEY` to a private Fernet key. Generate
+one once from the `backend` directory:
+
+```powershell
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+Put that key in `backend/.env` for local work and in Render's
+`DATA_ENCRYPTION_KEY` secret. Use the **same key** anywhere that connects to this
+database, keep a secure backup, and never commit or share it. The API encrypts
+phone numbers, delivery and branch addresses, and seller payout/contact fields
+before PostgreSQL stores them; it decrypts them for existing application
+workflows. On startup it also encrypts existing plaintext values. PostgreSQL
+startup fails if the key is missing or cannot decrypt stored data. Key loss
+means the encrypted values cannot be recovered.
+Order phone matching uses a keyed one-way lookup hash, not plaintext. Do not
+change the key without a planned data re-encryption and lookup-index migration.
+This field encryption applies to PostgreSQL; local SQLite development databases
+remain plaintext and should be kept private.
+
+### Migrate SQLite data to Supabase
+
+1. In Supabase, open **Connect** and copy the PostgreSQL transaction-pooler
+   connection string. Use the pooler URL for a Render deployment and keep the
+   database password private.
+2. Before deploying or migrating, configure both `DATABASE_URL` and the
+   generated `DATA_ENCRYPTION_KEY` in `backend/.env` (or in the PowerShell
+   session that runs the migration). Never share either secret or commit them.
+3. From the `backend` directory, preview the local source database:
+
+   ```powershell
+   python -m app.migrate_sqlite_to_postgres
+   ```
+
+4. Confirm the new Supabase app schema is empty, then import the local database:
+
+   ```powershell
+   python -m app.migrate_sqlite_to_postgres --apply
+   ```
+
+   The importer refuses to overwrite data in the destination. It copies
+   application tables in foreign-key order, preserves category hierarchies,
+   resets generated ID sequences, and does not migrate active admin or seller
+   sessions. Users will need to sign in again.
+5. In Render, set the same `DATABASE_URL` and `DATA_ENCRYPTION_KEY` under the
+   FastAPI service's environment variables and redeploy. The API creates/updates
+   its schema and encrypts any existing plaintext sensitive fields on startup.
+   Leave `DATABASE_PATH` unset in production.
+
+Keep the local SQLite file as a backup until you verify sign-in, products,
+orders, seller tools, support, and admin pages against the hosted API. Do not
+run the import again after live data has been written to Supabase.
 
 ### Buyer and seller authentication
 
@@ -199,12 +308,12 @@ Generate a session secret with `python -c "import secrets; print(secrets.token_u
 Use a long, unique password and rotate any credential disclosed in chat before
 deployment. Do not commit `.env` or expose these values to the frontend. Admin
 writes require an authenticated session cookie, an approved `Origin`, and the
-`X-Admin-Request` header. Product changes, inventory, order statuses, campaigns,
-and store availability are persisted in SQLite.
+`X-Admin-Request` header. Product changes, inventory, order statuses, campaigns, and store availability
+are persisted in the configured database.
 
 Administrator sessions are server-tracked and revocable. Failed logins are
 rate-limited by source IP. Role permissions are enforced by the API, and audit
-events are stored in an append-only SQLite table. `ADMIN_ROLE` assigns the
+events are stored in an append-only database table. `ADMIN_ROLE` assigns the
 configured environment account; creating and managing separate staff identities
 requires an identity-provider or account-provisioning integration.
 

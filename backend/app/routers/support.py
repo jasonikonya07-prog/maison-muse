@@ -24,6 +24,8 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from app.admin_auth import current_admin_details
 from app.auth_security import decode_access_token
+from app.config import get_database_url
+from app.data_encryption import phone_lookup_hash
 from app.database import get_connection
 
 
@@ -303,6 +305,7 @@ def _ensure_ticket(
         return ticket, False
 
     issued_token = secrets.token_urlsafe(32)
+    ticket_id = str(uuid.uuid4())
     customer_name = payload.customer_name
     customer_email = payload.customer_email
     customer_phone = payload.customer_phone
@@ -322,7 +325,7 @@ def _ensure_ticket(
         ) VALUES (?, ?, ?, ?, ?, ?, ?, 'BOT')
         """,
         (
-            str(uuid.uuid4()),
+            ticket_id,
             user_id,
             _token_digest(issued_token),
             customer_name,
@@ -332,7 +335,7 @@ def _ensure_ticket(
         ),
     )
     ticket = connection.execute(
-        "SELECT * FROM support_tickets WHERE rowid = ?", (cursor.lastrowid,)
+        "SELECT * FROM support_tickets WHERE id = ?", (ticket_id,)
     ).fetchone()
     return ticket, issued_token
 
@@ -379,18 +382,12 @@ def _automated_reply(
         user = connection.execute(
             "SELECT phone FROM users WHERE id = ?", (user_id,)
         ).fetchone()
-        order = (
-            connection.execute(
-                """
-                SELECT order_number, status, payment_status, gateway_tracking_id
-                FROM orders WHERE customer_phone = ?
-                ORDER BY created_at DESC LIMIT 1
-                """,
-                (user["phone"],),
-            ).fetchone()
+        matching_orders = (
+            _orders_for_customer_phone(connection, user["phone"], limit=1)
             if user and user["phone"]
-            else None
+            else []
         )
+        order = matching_orders[0] if matching_orders else None
     else:
         order = None
     if order:
@@ -432,6 +429,33 @@ def _automated_reply(
             [],
         )
     return FALLBACK_REPLY, FALLBACK_ACTIONS
+
+
+def _orders_for_customer_phone(
+    connection, phone: str, *, limit: int
+):
+    if get_database_url():
+        return connection.execute(
+            """
+            SELECT order_number, status, payment_status, gateway_tracking_id,
+                   created_at
+            FROM orders
+            WHERE customer_phone_lookup_hash = ?
+            ORDER BY created_at DESC
+            LIMIT ?
+            """,
+            (phone_lookup_hash(phone), limit),
+        ).fetchall()
+    return connection.execute(
+        """
+        SELECT order_number, status, payment_status, gateway_tracking_id, created_at
+        FROM orders
+        WHERE customer_phone = ?
+        ORDER BY created_at DESC
+        LIMIT ?
+        """,
+        (phone, limit),
+    ).fetchall()
 
 
 def _require_support_admin(request: Request, right: str) -> dict:
@@ -622,16 +646,11 @@ def list_support_tickets(
             ).fetchone()
             summary_message = dict(last_message_row) if last_message_row else None
             phone = ticket["account_phone"] or ticket["customer_phone"]
-            orders = []
-            if phone:
-                order_rows = connection.execute(
-                    """
-                    SELECT order_number, status, payment_status, created_at
-                    FROM orders WHERE customer_phone = ? ORDER BY created_at DESC LIMIT 5
-                    """,
-                    (phone,),
-                ).fetchall()
-                orders = [dict(order) for order in order_rows]
+            orders = (
+                [dict(order) for order in _orders_for_customer_phone(connection, phone, limit=5)]
+                if phone
+                else []
+            )
             results.append(
                 {
                     "id": ticket["id"],
@@ -671,18 +690,14 @@ def get_admin_support_ticket(ticket_id: str, request: Request) -> dict:
         if ticket is None:
             raise HTTPException(status_code=404, detail="Support conversation not found.")
         phone = ticket["account_phone"] or ticket["customer_phone"]
-        orders = []
-        if phone:
-            orders = [
+        orders = (
+            [
                 dict(order)
-                for order in connection.execute(
-                    """
-                    SELECT order_number, status, payment_status, created_at
-                    FROM orders WHERE customer_phone = ? ORDER BY created_at DESC LIMIT 5
-                    """,
-                    (phone,),
-                ).fetchall()
+                for order in _orders_for_customer_phone(connection, phone, limit=5)
             ]
+            if phone
+            else []
+        )
         return {
             "id": ticket["id"],
             "user_id": ticket["user_id"],

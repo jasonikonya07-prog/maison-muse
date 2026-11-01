@@ -22,7 +22,11 @@ def list_verified_sellers(
     limit: int = Query(default=24, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
 ) -> dict:
-    conditions = ["s.status = 'APPROVED'", "s.review_state = 'CLEAR'"]
+    conditions = [
+        "s.status = 'APPROVED'",
+        "s.review_state = 'CLEAR'",
+        "s.maintenance_mode = 0",
+    ]
     parameters: list[object] = []
     normalized_search = search.strip()
     normalized_category = category.strip()
@@ -278,6 +282,7 @@ def get_public_seller(store_slug: str) -> dict:
                    instagram_url, tiktok_url, operating_hours, holiday_mode, rating
             FROM sellers
             WHERE store_slug = ? AND status = 'APPROVED' AND review_state = 'CLEAR'
+              AND maintenance_mode = 0
             """,
             (store_slug,),
         ).fetchone()

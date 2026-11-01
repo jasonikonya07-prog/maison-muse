@@ -759,6 +759,20 @@ class SellerStatusUpdate(BaseModel):
     status: Literal["PENDING", "APPROVED", "SUSPENDED"]
 
 
+class SellerMaintenanceUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    enabled: bool
+    reason: str = Field(default="", max_length=1000)
+
+    @field_validator("reason")
+    @classmethod
+    def require_maintenance_reason(cls, value: str, info) -> str:
+        if info.data.get("enabled") and len(value) < 3:
+            raise ValueError("Provide a reason for placing this seller under maintenance.")
+        return value
+
+
 class SellerComplaintWarningInput(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 

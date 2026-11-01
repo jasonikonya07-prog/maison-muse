@@ -676,6 +676,11 @@ export const draftLowStockPurchaseOrders = () =>
 export const fetchMarketplaceManagement = () => adminRequest("/marketplace");
 export const updateMarketplaceVendor = (id, status) =>
   adminRequest(`/marketplace/vendors/${id}`, { method: "PATCH", body: { status } });
+export const updateMarketplaceVendorMaintenance = (id, maintenance) =>
+  adminRequest(`/marketplace/vendors/${encodeURIComponent(id)}/maintenance`, {
+    method: "PATCH",
+    body: maintenance,
+  });
 export const reviewMarketplaceVendor = (id, action, reason = "") =>
   adminRequest(`/marketplace/vendors/${id}/review`, {
     method: "POST",

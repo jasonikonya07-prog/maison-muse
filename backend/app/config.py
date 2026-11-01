@@ -3,7 +3,17 @@ from pathlib import Path
 
 
 BACKEND_ROOT = Path(__file__).resolve().parents[1]
-UPLOAD_ROOT = BACKEND_ROOT / "uploads"
+
+
+def get_upload_root() -> Path:
+    configured_path = os.getenv("UPLOAD_ROOT", "uploads").strip()
+    path = Path(configured_path)
+    if not path.is_absolute():
+        path = BACKEND_ROOT / path
+    return path
+
+
+UPLOAD_ROOT = get_upload_root()
 
 
 def get_database_path() -> Path:
@@ -12,6 +22,11 @@ def get_database_path() -> Path:
     if not path.is_absolute():
         path = BACKEND_ROOT / path
     return path
+
+
+def get_database_url() -> str | None:
+    configured_url = os.getenv("DATABASE_URL", "").strip()
+    return configured_url or None
 
 
 def get_cors_origins() -> list[str]:

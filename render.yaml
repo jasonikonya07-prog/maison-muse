@@ -1,0 +1,62 @@
+services:
+  - type: web
+    name: maison-muse-api
+    runtime: python
+    plan: starter
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    disk:
+      name: maison-muse-uploads
+      mountPath: /opt/render/project/src/backend/uploads
+      sizeGB: 1
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: APP_ENV
+        value: production
+      - key: ADMIN_COOKIE_SECURE
+        value: "true"
+      - key: ADMIN_ROLE
+        value: Super Admin
+      - key: DEMO_CHECKOUT_ENABLED
+        value: "false"
+      - key: SELLER_DEMO_APPROVAL_ENABLED
+        value: "false"
+      - key: SELLER_AUTO_APPROVE_REGISTRATIONS
+        value: "false"
+      - key: PESAPAL_ENVIRONMENT
+        value: sandbox
+      - key: UPLOAD_ROOT
+        value: /opt/render/project/src/backend/uploads
+      - key: DATABASE_URL
+        sync: false
+      - key: DATA_ENCRYPTION_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      - key: AUTH_JWT_SECRET
+        generateValue: true
+      - key: ADMIN_SESSION_SECRET
+        generateValue: true
+      - key: ADMIN_USERNAME
+        sync: false
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: PESAPAL_CONSUMER_KEY
+        sync: false
+      - key: PESAPAL_CONSUMER_SECRET
+        sync: false
+      - key: PESAPAL_CALLBACK_URL
+        sync: false
+      - key: PESAPAL_IPN_URL
+        sync: false
+      - key: PESAPAL_IPN_ID
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false
+      - key: RESEND_FROM_EMAIL
+        sync: false

@@ -7,6 +7,8 @@ from decimal import Decimal, ROUND_HALF_UP
 from fastapi import APIRouter, HTTPException, Request, status
 
 from app.auth_security import decode_access_token
+from app.config import get_database_url
+from app.data_encryption import phone_lookup_hash
 from app.database import get_connection
 from app.order_tracking import (
     apply_seller_fulfillment,
@@ -80,6 +82,7 @@ def demo_checkout(order: DemoCheckoutInput, request: Request) -> dict:
                     SELECT p.id, p.name, p.price, p.stock, p.seller_id,
                            p.is_agri_product,
                            p.category, s.status AS seller_status,
+                           s.maintenance_mode AS seller_maintenance_mode,
                            s.review_state AS seller_review_state,
                            s.holiday_mode AS seller_holiday_mode,
                            s.store_name, s.store_slug,
@@ -107,6 +110,7 @@ def demo_checkout(order: DemoCheckoutInput, request: Request) -> dict:
                 if product["seller_id"] is not None and (
                     product["seller_status"] != "APPROVED"
                     or product["seller_review_state"] != "CLEAR"
+                    or product["seller_maintenance_mode"]
                 ):
                     raise HTTPException(
                         status_code=409,
@@ -204,11 +208,12 @@ def demo_checkout(order: DemoCheckoutInput, request: Request) -> dict:
             cursor = connection.execute(
                 """
                 INSERT INTO orders (
-                    order_number, tracking_id, buyer_id, customer_name, customer_phone, delivery_address,
+                    order_number, tracking_id, buyer_id, customer_name, customer_phone,
+                    customer_phone_lookup_hash, delivery_address,
                     payment_method, payment_gateway, gateway_status, status,
                     payment_status, mpesa_phone, gateway_reference, subtotal_cents,
                     shipping_cents, tax_cents, total_cents
-                ) VALUES (?, ?, ?, ?, ?, ?, 'mobile-money', 'Demo M-Pesa',
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, 'mobile-money', 'Demo M-Pesa',
                           'ESCROW PAID (DEMO)', 'completed', 'completed_demo',
                           ?, ?, ?, ?, ?, ?)
                 """,
@@ -218,6 +223,11 @@ def demo_checkout(order: DemoCheckoutInput, request: Request) -> dict:
                     buyer_id,
                     order.customer.name,
                     order.customer.phone,
+                    (
+                        phone_lookup_hash(order.customer.phone)
+                        if get_database_url()
+                        else ""
+                    ),
                     delivery_address,
                     order.mpesa_phone,
                     transaction_reference,
@@ -352,6 +362,7 @@ def create_order(order: OrderCreate, request: Request) -> dict:
                            p.category, s.commission_percentage,
                            s.commission_is_custom, s.selected_plan,
                            s.commission_rate, s.status AS seller_status,
+                           s.maintenance_mode AS seller_maintenance_mode,
                            s.review_state AS seller_review_state,
                            s.holiday_mode AS seller_holiday_mode
                     FROM products p
@@ -377,6 +388,7 @@ def create_order(order: OrderCreate, request: Request) -> dict:
                 if product["seller_id"] is not None and (
                     product["seller_status"] != "APPROVED"
                     or product["seller_review_state"] != "CLEAR"
+                    or product["seller_maintenance_mode"]
                 ):
                     raise HTTPException(
                         status_code=status.HTTP_409_CONFLICT,
@@ -472,11 +484,12 @@ def create_order(order: OrderCreate, request: Request) -> dict:
             cursor = connection.execute(
                 """
                 INSERT INTO orders (
-                    order_number, tracking_id, buyer_id, customer_name, customer_phone, delivery_address,
+                    order_number, tracking_id, buyer_id, customer_name, customer_phone,
+                    customer_phone_lookup_hash, delivery_address,
                     payment_method, payment_gateway, status, payment_status,
                     payment_attempts, subtotal_cents, shipping_cents, tax_cents,
                     total_cents
-                ) VALUES (?, ?, ?, ?, ?, ?, 'pesapal', 'Pesapal', 'pending',
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, 'pesapal', 'Pesapal', 'pending',
                           'pending_callback', 1, ?, ?, ?, ?)
                 """,
                 (
@@ -485,6 +498,11 @@ def create_order(order: OrderCreate, request: Request) -> dict:
                     buyer_id,
                     order.customer.name,
                     order.customer.phone,
+                    (
+                        phone_lookup_hash(order.customer.phone)
+                        if get_database_url()
+                        else ""
+                    ),
                     order.customer.address,
                     subtotal_cents,
                     shipping_cents,

@@ -43,6 +43,7 @@ from app.schemas import (
     RolePermissionsUpdate,
     SellerPayoutInput,
     SellerComplaintWarningInput,
+    SellerMaintenanceUpdate,
     SellerQcReviewUpdate,
     SellerReviewUpdate,
     SellerStatusUpdate,
@@ -177,7 +178,8 @@ def marketplace_management(request: Request) -> dict:
                    s.owner_name, s.submitted_documents_json, s.review_note,
                    s.review_state, s.business_phone, s.payout_method,
                    s.payout_account, s.business_category,
-                   s.business_registration_number, s.status, s.rating, s.commission_percentage,
+                   s.business_registration_number, s.status, s.maintenance_mode,
+                   s.maintenance_reason, s.rating, s.commission_percentage,
                    s.commission_is_custom,
                    u.email,
                    (SELECT COUNT(*) FROM products p
@@ -252,6 +254,54 @@ def marketplace_management(request: Request) -> dict:
         "total_commissions": round(totals, 2),
         "pending_payouts": round(sum(row["pending_payout"] for row in vendors), 2),
         "payout_transactions": [dict(row) for row in payout_rows],
+    }
+
+
+@router.patch("/marketplace/vendors/{seller_id}/maintenance")
+def update_marketplace_vendor_maintenance(
+    seller_id: int, update: SellerMaintenanceUpdate, request: Request
+) -> dict:
+    username = _authorize(request, "settings", "write")
+    _verify_admin_write(request)
+    with get_connection() as connection:
+        seller = connection.execute(
+            "SELECT store_name FROM sellers WHERE id = ?", (seller_id,)
+        ).fetchone()
+        if seller is None:
+            raise HTTPException(status_code=404, detail="Seller was not found.")
+        reason = update.reason.strip() if update.enabled else ""
+        connection.execute(
+            """
+            UPDATE sellers
+            SET maintenance_mode = ?, maintenance_reason = ?
+            WHERE id = ?
+            """,
+            (int(update.enabled), reason, seller_id),
+        )
+        _audit(
+            connection,
+            request,
+            "Marketplace",
+            "VENDOR_MAINTENANCE_ENABLED" if update.enabled else "VENDOR_MAINTENANCE_ENDED",
+            (
+                f"Placed seller {seller['store_name']} under maintenance."
+                if update.enabled
+                else f"Ended maintenance for seller {seller['store_name']}."
+            ),
+            severity="WARNING" if update.enabled else "INFO",
+            details={
+                "seller_id": seller_id,
+                "seller_name": seller["store_name"],
+                "maintenance_mode": update.enabled,
+                "reason": reason,
+                "admin": username,
+            },
+        )
+        connection.commit()
+    return {
+        "seller_id": seller_id,
+        "maintenance_mode": update.enabled,
+        "maintenance_reason": reason,
     }
 
 

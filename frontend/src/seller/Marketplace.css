@@ -526,6 +526,11 @@
   color: #a23f42;
 }
 
+.seller-status-badge.maintenance {
+  background: #fff3df;
+  color: #986d2d;
+}
+
 .seller-metrics,
 .vendor-summary-grid {
   display: grid;

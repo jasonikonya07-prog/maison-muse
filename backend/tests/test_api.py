@@ -25,6 +25,7 @@ class StoreApiTests(unittest.TestCase):
             os.environ,
             {
                 "DATABASE_PATH": str(self.database_path),
+                "DATABASE_URL": "",
                 "CORS_ORIGINS": "http://localhost:5173",
                 "ADMIN_USERNAME": "store-admin",
                 "ADMIN_PASSWORD": "test-admin-password",
@@ -1790,6 +1791,104 @@ class StoreApiTests(unittest.TestCase):
             headers=self.seller_write_headers,
         )
         self.assertEqual(signed_out.status_code, 200, signed_out.text)
+
+    def test_admin_can_enable_and_end_seller_maintenance(self) -> None:
+        seller = self.register_seller(self.client, "Cedar Rose Boutique")
+        self.login_admin()
+        approved = self.client.patch(
+            f"/api/admin/marketplace/vendors/{seller['id']}",
+            headers=self.admin_write_headers,
+            json={"status": "APPROVED"},
+        )
+        self.assertEqual(approved.status_code, 200, approved.text)
+
+        product = self.client.post(
+            "/api/seller/products",
+            headers={
+                **self.seller_write_headers,
+                "Authorization": f"Bearer {seller['access_token']}",
+            },
+            json={
+                "name": "Cedar Face Oil",
+                "brand": "Cedar Rose Boutique",
+                "sku": "CR-FACE-01",
+                "category": "Skincare & Glow",
+                "detail": "A lightweight facial oil",
+                "description": "A lightweight facial oil for daily use.",
+                "price": 1800,
+                "stock": 5,
+                "images": ["https://images.example/cedar-oil.jpg"],
+            },
+        )
+        self.assertEqual(product.status_code, 201, product.text)
+        quality_review = self.client.post(
+            f"/api/admin/seller-qc/{product.json()['id']}",
+            headers=self.admin_write_headers,
+            json={"action": "APPROVE", "notes": "Listing checked."},
+        )
+        self.assertEqual(quality_review.status_code, 200, quality_review.text)
+        self.assertIn(
+            product.json()["id"],
+            {item["id"] for item in self.client.get("/api/products").json()},
+        )
+
+        invalid = self.client.patch(
+            f"/api/admin/marketplace/vendors/{seller['id']}/maintenance",
+            headers=self.admin_write_headers,
+            json={"enabled": True, "reason": "  "},
+        )
+        self.assertEqual(invalid.status_code, 422, invalid.text)
+        enabled = self.client.patch(
+            f"/api/admin/marketplace/vendors/{seller['id']}/maintenance",
+            headers=self.admin_write_headers,
+            json={"enabled": True, "reason": "Compliance review in progress."},
+        )
+        self.assertEqual(enabled.status_code, 200, enabled.text)
+        profile = self.client.get("/api/seller/me")
+        self.assertEqual(profile.status_code, 200, profile.text)
+        self.assertTrue(profile.json()["maintenance_mode"])
+        self.assertEqual(profile.json()["maintenance_reason"], "Compliance review in progress.")
+        self.assertNotIn(
+            product.json()["id"],
+            {item["id"] for item in self.client.get("/api/products").json()},
+        )
+        store = self.client.get(f"/api/sellers/stores/{seller['store_slug']}")
+        self.assertEqual(store.status_code, 404, store.text)
+        blocked = self.client.get(
+            "/api/seller/dashboard",
+            headers={"Authorization": f"Bearer {seller['access_token']}"},
+        )
+        self.assertEqual(blocked.status_code, 403, blocked.text)
+        self.assertIn("Compliance review in progress.", blocked.json()["detail"])
+
+        ended = self.client.patch(
+            f"/api/admin/marketplace/vendors/{seller['id']}/maintenance",
+            headers=self.admin_write_headers,
+            json={"enabled": False},
+        )
+        self.assertEqual(ended.status_code, 200, ended.text)
+        self.assertFalse(ended.json()["maintenance_mode"])
+        self.assertIn(
+            product.json()["id"],
+            {item["id"] for item in self.client.get("/api/products").json()},
+        )
+        with sqlite3.connect(self.database_path) as connection:
+            audit_events = {
+                row[0]
+                for row in connection.execute(
+                    """
+                    SELECT event_type FROM admin_audit_logs
+                    WHERE event_type IN (
+                        'VENDOR_MAINTENANCE_ENABLED',
+                        'VENDOR_MAINTENANCE_ENDED'
+                    )
+                    """
+                )
+            }
+        self.assertEqual(
+            audit_events,
+            {"VENDOR_MAINTENANCE_ENABLED", "VENDOR_MAINTENANCE_ENDED"},
+        )
 
     def test_seller_review_commission_policy_dispute_and_audit(self) -> None:
         seller = self.register_seller(self.client, "Rosewood Market")
