@@ -489,6 +489,15 @@ export const updateAdminOrderStatus = (orderNumber, status) =>
   });
 export const fetchAdminCustomers = (search = "") =>
   adminRequest(`/customers${search ? `?search=${encodeURIComponent(search)}` : ""}`);
+export const fetchAdminUserActivity = (search = "") =>
+  adminRequest(`/users${search ? `?search=${encodeURIComponent(search)}` : ""}`);
+export const fetchMarketplaceVendorWarnings = (sellerId) =>
+  adminRequest(`/marketplace/vendors/${encodeURIComponent(sellerId)}/warnings`);
+export const createMarketplaceVendorWarning = (sellerId, warning) =>
+  adminRequest(`/marketplace/vendors/${encodeURIComponent(sellerId)}/warnings`, {
+    method: "POST",
+    body: warning,
+  });
 export const fetchAdminNotifications = () => adminRequest("/notifications");
 export const fetchAdminCampaigns = () => adminRequest("/campaigns");
 export const createAdminCampaign = (campaign) =>
@@ -1072,12 +1081,15 @@ export async function createDemoCheckout({
     if (response.ok) throw new Error("The checkout API returned invalid JSON.");
   }
   if (!response.ok) {
-    throw new Error(
+    const checkoutError = new Error(
       getApiErrorMessage(
         payload,
         `Checkout could not be completed (${response.status}).`,
       ),
     );
+    checkoutError.status = response.status;
+    checkoutError.detail = payload?.detail;
+    throw checkoutError;
   }
   return payload;
 }

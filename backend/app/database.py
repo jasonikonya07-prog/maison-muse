@@ -111,6 +111,27 @@ def initialize_database() -> None:
             CREATE INDEX IF NOT EXISTS idx_seller_login_attempts_time
                 ON seller_login_attempts(created_at, ip_address);
 
+            CREATE TABLE IF NOT EXISTS user_login_events (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+                provider TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_user_login_events_user_time
+                ON user_login_events(user_id, created_at DESC);
+
+            CREATE TABLE IF NOT EXISTS seller_complaint_warnings (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                seller_id INTEGER NOT NULL REFERENCES sellers(id) ON DELETE CASCADE,
+                admin_username TEXT NOT NULL,
+                complaint_summary TEXT NOT NULL,
+                complaint_reference TEXT NOT NULL DEFAULT '',
+                delivery_status TEXT NOT NULL DEFAULT 'PENDING',
+                created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_seller_complaint_warnings_seller_time
+                ON seller_complaint_warnings(seller_id, created_at DESC);
+
             CREATE TABLE IF NOT EXISTS products (
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,

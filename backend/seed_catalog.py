@@ -31,6 +31,8 @@ CATEGORIES = [
         "products": [
             ("Samsung Galaxy S24 Ultra 256GB", 145000, "Smartphones", "photo-1511707171634-5f897ff02aa9", "A premium large-screen smartphone with a versatile camera system and generous 256GB storage.", ["256GB internal storage", "Large high-resolution AMOLED display", "Advanced multi-lens camera system"]),
             ("HP ProBook 450 G9 i7 16GB RAM", 88000, "Laptops", "photo-1496181133206-80ce9b88a853", "A business-ready laptop configured for productive multitasking, video meetings, and everyday office work.", ["Intel Core i7 processor", "16GB memory for multitasking", "15.6-inch class productivity display"]),
+            ("PlayStation 5 Slim Disc Edition", 89999, "PlayStation Consoles", "photo-1606813907291-d86efa9b94db", "Sony PlayStation 5 Slim console with disc drive for current-generation gaming and 4K entertainment.", ["Slim disc-drive console", "4K gaming support", "Controller and included accessories depend on seller listing"]),
+            ("PlayStation 4 Slim 1TB Console", 39999, "PlayStation Consoles", "photo-1592840496694-26d035b52b48", "PlayStation 4 Slim console with 1TB storage for games, streaming, and home entertainment.", ["1TB internal storage", "Compact PS4 Slim design", "Confirm controller and game bundle with seller"]),
         ],
     },
     {
@@ -40,6 +42,8 @@ CATEGORIES = [
         "products": [
             ("Men's Slim Fit Casual Denim Jeans", 2500, "Men's Clothing", "photo-1542272604-787c3835535d", "Versatile slim-fit denim with a clean wash, comfortable stretch, and an easy everyday silhouette.", ["Slim-fit cut", "Comfort-stretch denim", "Classic five-pocket design"]),
             ("Women's Floral Summer Maxi Dress", 3200, "Women's Clothing", "photo-1496747611176-843222e1e57c", "A light, flowing maxi dress finished with a delicate floral print for warm days and relaxed occasions.", ["Breathable lightweight fabric", "Full-length flowing silhouette", "Floral print for day-to-evening wear"]),
+            ("Unisex Lightweight Running Sneakers", 5200, "Shoes & Sneakers", "photo-1542291026-7eec264c27ff", "Lightweight everyday running shoes with a cushioned sole for walking, training, and commuting.", ["Breathable upper", "Cushioned rubber sole", "Choose size and color from seller options"]),
+            ("Women's Knit Walking Shoes", 4800, "Shoes & Sneakers", "photo-1608231387042-66d1773070a5", "Comfortable knit walking shoes with a flexible sole for daily errands and casual wear.", ["Flexible knit upper", "Lightweight cushioned sole", "Available sizing is set by the seller"]),
         ],
     },
     {
@@ -67,6 +71,8 @@ CATEGORIES = [
         "products": [
             ("Anker 65W Fast Charging USB-C Adapter", 4500, "Chargers & Adapters", "photo-1583394838336-acd977736f90", "A compact USB-C power adapter for fast, convenient charging of compatible phones, tablets, and laptops.", ["Up to 65W USB-C output", "Compact travel-friendly form", "Compatible USB-C cable sold separately"]),
             ("Magnetic Wireless Power Bank 10000mAh", 3800, "Power Banks", "photo-1609091839311-d5365f9ff1c5", "A pocketable 10,000mAh power bank with magnetic wireless charging for compatible devices.", ["10,000mAh capacity", "Magnetic wireless charging support", "USB output for wired charging"]),
+            ("Samsung Galaxy A55 5G 128GB", 39999, "Smartphones", "photo-1511707171634-5f897ff02aa9", "Samsung Galaxy A55 5G smartphone with 128GB storage, a vivid AMOLED display, and a multi-camera system.", ["128GB internal storage", "5G connectivity", "Confirm color and warranty terms with seller"]),
+            ("Tecno Camon 30 256GB", 29999, "Smartphones", "photo-1511707171634-5f897ff02aa9", "Tecno Camon 30 smartphone with 256GB storage and a high-resolution camera for everyday use.", ["256GB internal storage", "High-resolution camera system", "Confirm color and warranty terms with seller"]),
         ],
     },
     {
@@ -291,9 +297,9 @@ def seed_catalog() -> dict[str, int]:
                 product_count += 1
         connection.commit()
 
-    if category_count != 18 or product_count != 36:
+    if category_count != 18 or product_count != 42:
         raise RuntimeError(
-            f"Catalog seed definition must contain 18 root categories and 36 products; found {category_count} and {product_count}."
+            f"Catalog seed definition must contain 18 root categories and 42 products; found {category_count} and {product_count}."
         )
     return {"root_categories": category_count, "products_seeded": product_count}
 

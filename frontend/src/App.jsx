@@ -19,6 +19,7 @@ import AuthModal from "./components/AuthModal.jsx";
 import Navbar from "./components/Navbar.jsx";
 import SellerInspectorModal from "./components/SellerInspectorModal.jsx";
 import ProductSection from "./components/ProductSection.jsx";
+import ProductImage from "./components/ProductImage.jsx";
 import VerifiedSellers from "./components/VerifiedSellers.jsx";
 import AgriFarmHub from "./pages/AgriFarmHub.jsx";
 import { useFeatures } from "./context/FeatureContext.jsx";
@@ -583,7 +584,7 @@ function ProductDetailModal({
                 aria-pressed={activeImage === index}
                 onClick={() => setActiveImage(index)}
               >
-                <img src={image} alt="" />
+                <ProductImage src={image} alt="" />
               </button>
             ))}
           </div>
@@ -1512,7 +1513,7 @@ function App() {
                 <div className="cart-items" aria-label="Items in your shopping bag">
                   {cartItems.map((item) => (
                     <article className="cart-item" key={item.cartKey}>
-                      <img src={item.image} alt="" />
+                      <ProductImage src={item.image} alt="" />
                       <div className="cart-item-info">
                         <span className="cart-item-category">{item.category}</span>
                         <h3>{item.name}</h3>
@@ -1623,6 +1624,7 @@ function App() {
         <CheckoutModal
           items={cartItems}
           subtotal={cartTotal}
+          user={authUser}
           onClose={() => {
             setCheckoutOpen(false);
             setCartOpen(true);
@@ -1634,7 +1636,38 @@ function App() {
             setCartOpen(false);
           }}
           onPlaceOrder={async (order) => {
-            return createDemoCheckout(order);
+            try {
+              return await createDemoCheckout(order);
+            } catch (checkoutError) {
+              if (
+                checkoutError.status === 404 &&
+                typeof checkoutError.detail === "string" &&
+                checkoutError.detail.startsWith("Product ")
+              ) {
+                const currentProducts = await fetchProducts({ limit: 100 });
+                const availableProductIds = new Set(
+                  currentProducts.map((product) => String(product.id)),
+                );
+                const unavailableItems = order.items.filter(
+                  (item) => !availableProductIds.has(String(item.id)),
+                );
+                if (unavailableItems.length) {
+                  setCartItems((current) =>
+                    current.filter((item) =>
+                      availableProductIds.has(String(item.id)),
+                    ),
+                  );
+                  const names = unavailableItems
+                    .map((item) => item.name ?? item.title ?? "A product")
+                    .join(", ");
+                  throw new Error(
+                    `These items are no longer available and were removed from your cart: ${names}. ` +
+                      "Your total has been updated; review the cart and try again.",
+                  );
+                }
+              }
+              throw checkoutError;
+            }
           }}
         />
       )}

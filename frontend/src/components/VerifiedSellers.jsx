@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, MapPin, Search, ShieldCheck, Star, Store } from "lucide-react";
 import { Link } from "react-router-dom";
 import { fetchVerifiedSellers } from "../services/api.js";
+import ProductImage from "./ProductImage.jsx";
 import { useFeatures } from "../context/FeatureContext.jsx";
 import "./VerifiedSellers.css";
 
@@ -165,7 +166,7 @@ function VerifiedSellers({ directory = false }) {
                   {seller.banner_url ? (
                     <img src={seller.banner_url} alt="" loading="lazy" />
                   ) : seller.product_samples[0]?.image ? (
-                    <img src={seller.product_samples[0].image} alt="" loading="lazy" />
+                    <ProductImage src={seller.product_samples[0].image} alt="" loading="lazy" />
                   ) : (
                     <span className="verified-seller-cover-placeholder"><Store size={28} /></span>
                   )}
@@ -207,7 +208,7 @@ function VerifiedSellers({ directory = false }) {
                   {seller.product_samples.length > 0 && (
                     <div className="verified-seller-samples" aria-label="Boutique product samples">
                       {seller.product_samples.map((product) => (
-                        <img
+                        <ProductImage
                           key={product.name}
                           src={product.image}
                           alt={product.name}

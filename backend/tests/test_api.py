@@ -170,6 +170,18 @@ class StoreApiTests(unittest.TestCase):
         )
         self.assertEqual(len({item["id"] for item in products}), 32)
         self.assertEqual(len(farm_products), 7)
+        cattle = {
+            item["id"]: item["image"]
+            for item in farm_products
+            if item["id"] in {"agri-friesian-in-calf-heifer", "agri-fleckvieh-dairy-cow"}
+        }
+        self.assertEqual(
+            cattle,
+            {
+                "agri-friesian-in-calf-heifer": "/farm-cattle.svg",
+                "agri-fleckvieh-dairy-cow": "/farm-cattle.svg",
+            },
+        )
         self.assertTrue(
             all(item["farmer_name"] and item["farmer_whatsapp"] for item in farm_products)
         )
@@ -179,7 +191,10 @@ class StoreApiTests(unittest.TestCase):
         )
         self.assertTrue(
             all(
-                item["image"].startswith("https://images.unsplash.com/")
+                (
+                    item["image"].startswith("https://images.unsplash.com/")
+                    or item["image"] == "/farm-cattle.svg"
+                )
                 and len(item["images"]) == 1
                 for item in farm_products
             )
@@ -279,7 +294,7 @@ class StoreApiTests(unittest.TestCase):
         self.assertEqual(health.json(), {"status": "ok", "database": "connected"})
 
     def test_seed_catalog_creates_marketplace_categories_and_exact_product_pairs(self) -> None:
-        expected = {"root_categories": 18, "products_seeded": 36}
+        expected = {"root_categories": 18, "products_seeded": 42}
         self.assertEqual(seed_catalog(), expected)
         self.assertEqual(seed_catalog(), expected)
 
@@ -287,11 +302,24 @@ class StoreApiTests(unittest.TestCase):
         self.assertEqual(len(categories), 19)
         self.assertTrue(
             all(
-                category["product_count"] == (
-                    7 if category["slug"] == "agriculture-livestock" else 2
-                )
+                category["product_count"] == {
+                    "agriculture-livestock": 7,
+                    "electronics": 4,
+                    "fashion-clothing": 4,
+                    "phones-accessories": 4,
+                }.get(category["slug"], 2)
                 for category in categories
             )
+        )
+        seeded_consoles = self.client.get(
+            "/api/products", params={"search": "PlayStation"}
+        ).json()
+        self.assertEqual(
+            {product["name"] for product in seeded_consoles},
+            {
+                "PlayStation 5 Slim Disc Edition",
+                "PlayStation 4 Slim 1TB Console",
+            },
         )
         products = self.client.get("/api/products/category/kitchen-dining").json()
         self.assertEqual(len(products), 2)
@@ -320,6 +348,19 @@ class StoreApiTests(unittest.TestCase):
         payload = registration.json()
         self.assertEqual(payload["user"]["role"], "buyer")
         self.assertNotIn("password_hash", payload["user"])
+        with closing(sqlite3.connect(self.database_path)) as connection:
+            connection.execute(
+                """
+                INSERT INTO seller_login_attempts (email, ip_address, succeeded, created_at)
+                VALUES (?, ?, 1, ?)
+                """,
+                (
+                    "jamie@example.com",
+                    "127.0.0.1",
+                    (datetime.now(timezone.utc) - timedelta(days=2)).isoformat(),
+                ),
+            )
+            connection.commit()
         self.assertEqual(
             self.client.get(
                 "/api/auth/me",
@@ -333,6 +374,14 @@ class StoreApiTests(unittest.TestCase):
         )
         self.assertEqual(login.status_code, 200, login.text)
         self.assertEqual(login.json()["user"]["id"], payload["user"]["id"])
+        self.login_admin()
+        activity = self.client.get("/api/admin/users", headers=self.admin_write_headers)
+        self.assertEqual(activity.status_code, 200, activity.text)
+        tracked_account = next(
+            account for account in activity.json() if account["id"] == payload["user"]["id"]
+        )
+        self.assertEqual(tracked_account["login_count"], 3)
+        self.assertEqual(tracked_account["last_login_provider"], "password")
         invalid_token = self.client.get(
             "/api/auth/me",
             headers={"Authorization": f"Bearer {payload['access_token']}x"},
@@ -410,6 +459,47 @@ class StoreApiTests(unittest.TestCase):
         other_history = self.client.get("/api/orders/mine", headers=other_headers)
         self.assertEqual(other_history.status_code, 200, other_history.text)
         self.assertEqual(other_history.json(), [])
+
+    def test_seller_session_can_checkout_as_guest(self) -> None:
+        self.register_seller(self.client, "Guest Checkout Seller")
+        seller_login = self.client.post(
+            "/api/auth/login",
+            json={
+                "email": "guestcheckoutseller@example.com",
+                "password": "correct-horse-battery",
+            },
+        )
+        self.assertEqual(seller_login.status_code, 200, seller_login.text)
+        seller_headers = {
+            "Authorization": f"Bearer {seller_login.json()['access_token']}"
+        }
+        product = next(
+            item
+            for item in self.client.get("/api/products").json()
+            if not item["is_agri_product"]
+        )
+        with patch.dict(os.environ, {"DEMO_CHECKOUT_ENABLED": "true"}):
+            checkout = self.client.post(
+                "/api/orders/checkout",
+                headers=seller_headers,
+                json={
+                    "customer": {
+                        "name": "Guest Seller Buyer",
+                        "phone": "+254700000025",
+                        "address": "123 Market Road, Nairobi",
+                    },
+                    "items": [{"product_id": product["id"], "quantity": 1}],
+                    "city": "Nairobi",
+                    "mpesa_phone": "0712345678",
+                },
+            )
+        self.assertEqual(checkout.status_code, 201, checkout.text)
+        with closing(sqlite3.connect(self.database_path)) as connection:
+            buyer_id = connection.execute(
+                "SELECT buyer_id FROM orders WHERE order_number = ?",
+                (checkout.json()["order_number"],),
+            ).fetchone()[0]
+        self.assertIsNone(buyer_id)
 
     def test_seller_registration_requires_terms_and_supported_plan(self) -> None:
         registration = {
@@ -1583,6 +1673,123 @@ class StoreApiTests(unittest.TestCase):
                 ledger_rows,
                 [("ESCROW PAID (DEMO)", 900), ("ESCROW PAID (DEMO)", 900)],
             )
+
+    def test_admin_can_record_complaint_warning_and_reports_email_delivery_state(self) -> None:
+        seller = self.register_seller(self.client, "Rosewood Market")
+        self.login_admin()
+        with patch.dict(
+            os.environ,
+            {
+                "RESEND_API_KEY": "",
+                "RESEND_FROM_EMAIL": "",
+                "SMTP_HOST": "",
+                "SMTP_FROM": "",
+            },
+        ):
+            warning = self.client.post(
+                f"/api/admin/marketplace/vendors/{seller['id']}/warnings",
+                headers=self.admin_write_headers,
+                json={
+                    "complaint_summary": "Buyer reports that the delivered item was damaged.",
+                    "complaint_reference": "ORDER-123",
+                },
+            )
+        self.assertEqual(warning.status_code, 200, warning.text)
+        self.assertEqual(warning.json()["delivery_status"], "NOT_CONFIGURED")
+        self.assertEqual(warning.json()["complaint_reference"], "ORDER-123")
+        history = self.client.get(
+            f"/api/admin/marketplace/vendors/{seller['id']}/warnings",
+            headers=self.admin_write_headers,
+        )
+        self.assertEqual(history.status_code, 200, history.text)
+        self.assertEqual(len(history.json()), 1)
+
+    def test_admin_warning_sends_mail_when_smtp_is_configured(self) -> None:
+        seller = self.register_seller(self.client, "Juniper Market")
+        self.login_admin()
+        with (
+            patch.dict(
+                os.environ,
+                {
+                    "SMTP_HOST": "smtp.example.test",
+                    "SMTP_PORT": "587",
+                    "SMTP_USERNAME": "",
+                    "SMTP_PASSWORD": "",
+                    "SMTP_FROM": "support@example.test",
+                    "SMTP_STARTTLS": "false",
+                    "RESEND_API_KEY": "",
+                    "RESEND_FROM_EMAIL": "",
+                },
+            ),
+            patch("app.email_delivery.smtplib.SMTP") as smtp_client,
+        ):
+            smtp_client.return_value.__enter__.return_value.send_message.return_value = {}
+            warning = self.client.post(
+                f"/api/admin/marketplace/vendors/{seller['id']}/warnings",
+                headers=self.admin_write_headers,
+                json={
+                    "complaint_summary": "Buyer reports that the delivered item was damaged.",
+                },
+            )
+        self.assertEqual(warning.status_code, 200, warning.text)
+        self.assertEqual(warning.json()["delivery_status"], "SENT")
+        smtp_client.return_value.__enter__.return_value.send_message.assert_called_once()
+
+    def test_admin_warning_sends_through_resend(self) -> None:
+        seller = self.register_seller(self.client, "Cedar House")
+        self.login_admin()
+        response = Mock(status_code=200)
+        with (
+            patch.dict(
+                os.environ,
+                {
+                    "RESEND_API_KEY": "test-resend-key",
+                    "RESEND_FROM_EMAIL": "Maison Muse <support@example.test>",
+                    "SMTP_HOST": "",
+                    "SMTP_FROM": "",
+                },
+            ),
+            patch("app.email_delivery.httpx.post", return_value=response) as resend_post,
+        ):
+            warning = self.client.post(
+                f"/api/admin/marketplace/vendors/{seller['id']}/warnings",
+                headers=self.admin_write_headers,
+                json={
+                    "complaint_summary": "Buyer reports that the delivered item was damaged.",
+                },
+            )
+        self.assertEqual(warning.status_code, 200, warning.text)
+        self.assertEqual(warning.json()["delivery_status"], "SENT")
+        resend_post.assert_called_once()
+        self.assertEqual(
+            resend_post.call_args.kwargs["headers"]["Authorization"],
+            "Bearer test-resend-key",
+        )
+
+    def test_suspended_seller_has_reason_but_no_seller_api_access(self) -> None:
+        seller = self.register_seller(self.client, "Cedar & Rose")
+        self.login_admin()
+        suspended = self.client.post(
+            f"/api/admin/marketplace/vendors/{seller['id']}/review",
+            headers=self.admin_write_headers,
+            json={"action": "SUSPEND", "reason": "Repeated verified delivery complaints."},
+        )
+        self.assertEqual(suspended.status_code, 200, suspended.text)
+
+        profile = self.client.get("/api/seller/me")
+        self.assertEqual(profile.status_code, 200, profile.text)
+        self.assertEqual(profile.json()["status"], "SUSPENDED")
+        self.assertEqual(profile.json()["review_note"], "Repeated verified delivery complaints.")
+
+        blocked = self.client.get("/api/seller/orders")
+        self.assertEqual(blocked.status_code, 403, blocked.text)
+        self.assertIn("Repeated verified delivery complaints.", blocked.json()["detail"])
+
+        signed_out = self.client.post(
+            "/api/seller/logout",
+            headers=self.seller_write_headers,
+        )
+        self.assertEqual(signed_out.status_code, 200, signed_out.text)
 
     def test_seller_review_commission_policy_dispute_and_audit(self) -> None:
         seller = self.register_seller(self.client, "Rosewood Market")

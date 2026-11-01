@@ -8,6 +8,7 @@ import {
   getFarmerWhatsAppUrl,
 } from "../data/agriFarm.js";
 import { fetchProducts } from "../services/api.js";
+import ProductImage from "../components/ProductImage.jsx";
 import "./AgriFarmHub.css";
 
 function AgriFarmHub({ embedded = false }) {
@@ -81,7 +82,7 @@ function AgriFarmHub({ embedded = false }) {
             const whatsappUrl = getFarmerWhatsAppUrl(product);
             return (
               <article className="agri-product-card" key={product.id}>
-                <img src={product.image} alt={product.name} loading="lazy" />
+                <ProductImage src={product.image} alt={product.name} loading="lazy" />
                 <div className="agri-product-content">
                   <span className="agri-product-category">{product.category}</span>
                   <h2>{product.name}</h2>

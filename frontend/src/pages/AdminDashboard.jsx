@@ -35,6 +35,7 @@ import {
   Trash2,
   Truck,
   Users,
+  UserRoundSearch,
   X,
   Copy,
   Pause,
@@ -76,10 +77,12 @@ import PaymentLogs from "../admin/components/PaymentLogs.jsx";
 import CustomerInsights from "../admin/components/CustomerInsights.jsx";
 import SupplierManager from "../admin/components/SupplierManager.jsx";
 import VendorManager from "../admin/components/VendorManager.jsx";
+import UserActivity from "../admin/components/UserActivity.jsx";
 import CommissionManager from "../admin/components/CommissionManager.jsx";
 import AdminOrders from "../admin/AdminOrders.jsx";
 import AnalyticsOverview from "../admin/components/AnalyticsOverview.jsx";
 import AdminSupport from "../admin/AdminSupport.jsx";
+import ProductImage from "../components/ProductImage.jsx";
 import "./AdminDashboard.css";
 
 const ORDER_FILTERS = [
@@ -97,6 +100,7 @@ const NAV_ITEMS = [
   { id: "orders", label: "Order fulfillment", icon: ShoppingBag },
   { id: "inventory", label: "Inventory control", icon: Box },
   { id: "customers", label: "Customer directory", icon: Users },
+  { id: "userActivity", label: "User & login activity", icon: UserRoundSearch },
   { id: "campaigns", label: "Flash sale & promos", icon: Sparkles },
   { id: "settings", label: "System settings", icon: Settings },
   { id: "security", label: "Security & access", icon: Shield },
@@ -117,6 +121,7 @@ const NAV_ACCESS = {
   orders: ["orders", "read"],
   inventory: ["products", "read"],
   customers: ["orders", "read"],
+  userActivity: ["orders", "read"],
   campaigns: ["settings", "read"],
   settings: ["settings", "read"],
   security: ["settings", "read"],
@@ -479,7 +484,7 @@ function ProductModal({ product, onClose, onSave, saving }) {
           </div>
           {form.images.trim().startsWith("https://") && (
             <div className="admin-media-preview">
-              <img src={form.images.trim().split(/\r?\n/)[0]} alt="Product image preview" />
+              <ProductImage src={form.images.trim().split(/\r?\n/)[0]} alt="Product image preview" />
               <span>Image preview</span>
             </div>
           )}
@@ -1067,7 +1072,7 @@ function AdminDashboard() {
                 <div className="admin-table-tools"><label className="admin-table-search"><Search size={15} /><input placeholder="Find product or SKU" value={query} onChange={(e) => setQuery(e.target.value)} /></label>{page === "inventory" && <button className="admin-button secondary" onClick={() => setProducts([...products].sort((a, b) => a.stock - b.stock))}>Sort by stock</button>}</div>
               </header>
               <div className="admin-table-scroll"><table className="admin-table product-admin-table"><thead><tr><th>Product</th><th>Category</th><th>SKU</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th></tr></thead><tbody>
-                {(page === "inventory" ? filteredProducts.filter((product) => product.stock <= (product.lowStockThreshold ?? 5)) : filteredProducts).map((product) => { const stock = stockState(product); return <tr key={product.id}><td><span className="admin-product-cell"><img src={product.image} alt="" /><span><strong>{product.name}</strong><small>{product.brand}</small></span></span></td><td>{product.category}</td><td><code>{product.sku}</code></td><td>{formatKsh(product.price)}</td><td><strong>{product.stock}</strong><small className="admin-stock-threshold">Alert at {product.lowStockThreshold ?? 5}</small></td><td><span className={`admin-status ${stock.className}`}><i />{stock.label}</span></td><td><span className="admin-row-actions"><button title="Edit product" aria-label={`Edit ${product.name}`} disabled={!canAccess("products", "write")} onClick={() => setProductModal(product)}><Pencil size={15} /></button><button title="Duplicate product" aria-label={`Duplicate ${product.name}`} disabled={!canAccess("products", "write")} onClick={() => handleDuplicate(product)}><Copy size={15} /></button><button title={product.stock ? "Mark out of stock" : "Restock"} aria-label={product.stock ? `Mark ${product.name} out of stock` : `Restock ${product.name}`} disabled={!canAccess("products", "write")} onClick={() => handleToggleStock(product)}><Box size={15} /></button><button className="danger" title="Delete product" aria-label={`Delete ${product.name}`} disabled={!canAccess("products", "delete")} onClick={() => handleDelete(product)}><Trash2 size={15} /></button></span></td></tr>; })}
+                {(page === "inventory" ? filteredProducts.filter((product) => product.stock <= (product.lowStockThreshold ?? 5)) : filteredProducts).map((product) => { const stock = stockState(product); return <tr key={product.id}><td><span className="admin-product-cell"><ProductImage src={product.image} alt="" /><span><strong>{product.name}</strong><small>{product.brand}</small></span></span></td><td>{product.category}</td><td><code>{product.sku}</code></td><td>{formatKsh(product.price)}</td><td><strong>{product.stock}</strong><small className="admin-stock-threshold">Alert at {product.lowStockThreshold ?? 5}</small></td><td><span className={`admin-status ${stock.className}`}><i />{stock.label}</span></td><td><span className="admin-row-actions"><button title="Edit product" aria-label={`Edit ${product.name}`} disabled={!canAccess("products", "write")} onClick={() => setProductModal(product)}><Pencil size={15} /></button><button title="Duplicate product" aria-label={`Duplicate ${product.name}`} disabled={!canAccess("products", "write")} onClick={() => handleDuplicate(product)}><Copy size={15} /></button><button title={product.stock ? "Mark out of stock" : "Restock"} aria-label={product.stock ? `Mark ${product.name} out of stock` : `Restock ${product.name}`} disabled={!canAccess("products", "write")} onClick={() => handleToggleStock(product)}><Box size={15} /></button><button className="danger" title="Delete product" aria-label={`Delete ${product.name}`} disabled={!canAccess("products", "delete")} onClick={() => handleDelete(product)}><Trash2 size={15} /></button></span></td></tr>; })}
                 {!filteredProducts.length && <tr><td colSpan="7" className="admin-empty-copy">No products match this search.</td></tr>}
                 {page === "inventory" && !lowStockProducts.length && <tr><td colSpan="7" className="admin-empty-copy">Lovely! Every active item is above its low-stock threshold.</td></tr>}
               </tbody></table></div>
@@ -1083,7 +1088,7 @@ function AdminDashboard() {
               <div className="admin-seller-qc-list">
                 {sellerQc.map((product) => (
                   <article key={product.id}>
-                    <img src={product.image} alt="" />
+                    <ProductImage src={product.image} alt="" />
                     <div><strong>{product.name}</strong><small>{product.brand} · {product.sku} · {product.category}</small><small>{product.store_name} · {product.qc_status.replaceAll("_", " ")}</small>{product.notes && <p>{product.notes}</p>}</div>
                     <div className="admin-row-actions">
                       <button className="admin-button primary" type="button" disabled={!canAccess("products", "write") || busy} onClick={() => withBusy(() => decideAdminSellerQc(product.id, { action: "APPROVE", notes: "Quality review passed." }), "Seller listing approved and published.")}><Check size={14} /> Approve</button>
@@ -1114,6 +1119,7 @@ function AdminDashboard() {
             </section>
           )}
 
+          {page === "userActivity" && <UserActivity />}
           {page === "security" && <SecurityManager adminRole={session.role} canManageSessions={canAccess("settings", "write")} />}
           {page === "audit" && <AuditLogs />}
           {page === "payments" && <PaymentLogs canReconcile={canAccess("orders", "write")} />}

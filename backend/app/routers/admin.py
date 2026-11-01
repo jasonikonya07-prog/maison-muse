@@ -1,6 +1,7 @@
 import csv
 import io
 import json
+import logging
 import secrets
 import sqlite3
 import uuid
@@ -18,6 +19,7 @@ from app.admin_auth import (
     require_admin,
 )
 from app.database import get_connection
+from app.email_delivery import send_email
 from app.order_tracking import (
     decoded_items,
     effective_fulfillment_status,
@@ -40,6 +42,7 @@ from app.schemas import (
     PurchaseOrderInput,
     RolePermissionsUpdate,
     SellerPayoutInput,
+    SellerComplaintWarningInput,
     SellerQcReviewUpdate,
     SellerReviewUpdate,
     SellerStatusUpdate,
@@ -48,6 +51,7 @@ from app.schemas import (
 
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 ORDER_STATUSES = ("pending", "processing", "shipped", "delivered", "cancelled")
 PRODUCT_CATEGORIES = (
     "Perfumes & Fragrances",
@@ -121,6 +125,32 @@ def _audit_rows(connection: sqlite3.Connection, query: str, parameters: tuple) -
         item["details"] = json.loads(item.pop("details_json"))
         result.append(item)
     return result
+
+
+def _send_seller_complaint_warning(
+    recipient: str,
+    store_name: str,
+    complaint_summary: str,
+    complaint_reference: str,
+) -> str:
+    reference = f"\nComplaint reference: {complaint_reference}\n" if complaint_reference else ""
+    text = (
+        f"Hello {store_name},\n\n"
+        "Maison Muse has received a customer complaint concerning your store. "
+        "This notice is a request for your prompt review and response; it is not "
+        "a finding that the complaint has been substantiated.\n\n"
+        f"Complaint summary:\n{complaint_summary}\n"
+        f"{reference}\n"
+        "Please reply to the customer through the platform support process. "
+        "If you believe this report is inaccurate, include the relevant order "
+        "details in your response.\n\n"
+        "Maison Muse Seller Support"
+    )
+    return send_email(
+        recipient,
+        "Maison Muse: customer complaint requires your response",
+        text,
+    )
 
 
 def _verify_admin_write(request: Request) -> None:
@@ -291,6 +321,94 @@ def review_marketplace_vendor(
         "status": next_status or "PENDING",
         "review_note": review.reason,
     }
+
+
+@router.get("/marketplace/vendors/{seller_id}/warnings")
+def list_marketplace_vendor_warnings(seller_id: int, request: Request) -> list[dict]:
+    _authorize(request, "settings", "write")
+    with get_connection() as connection:
+        rows = connection.execute(
+            """
+            SELECT id, admin_username, complaint_summary, complaint_reference,
+                   delivery_status, created_at
+            FROM seller_complaint_warnings
+            WHERE seller_id = ?
+            ORDER BY created_at DESC, id DESC
+            LIMIT 50
+            """,
+            (seller_id,),
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+@router.post("/marketplace/vendors/{seller_id}/warnings")
+def create_marketplace_vendor_warning(
+    seller_id: int,
+    warning: SellerComplaintWarningInput,
+    request: Request,
+) -> dict:
+    username = _authorize(request, "settings", "write")
+    _verify_admin_write(request)
+    with get_connection() as connection:
+        seller = connection.execute(
+            """
+            SELECT s.store_name, u.email
+            FROM sellers s JOIN users u ON u.id = s.user_id
+            WHERE s.id = ?
+            """,
+            (seller_id,),
+        ).fetchone()
+        if seller is None:
+            raise HTTPException(status_code=404, detail="Seller was not found.")
+        created_at = datetime.now(timezone.utc).isoformat()
+        cursor = connection.execute(
+            """
+            INSERT INTO seller_complaint_warnings (
+                seller_id, admin_username, complaint_summary,
+                complaint_reference, delivery_status, created_at
+            ) VALUES (?, ?, ?, ?, 'PENDING', ?)
+            """,
+            (
+                seller_id,
+                username,
+                warning.complaint_summary,
+                warning.complaint_reference,
+                created_at,
+            ),
+        )
+        warning_id = cursor.lastrowid
+        _audit(
+            connection,
+            request,
+            "Marketplace",
+            "SELLER_COMPLAINT_WARNING_CREATED",
+            f"Recorded a customer complaint warning for {seller['store_name']}.",
+            severity="WARNING",
+            details={
+                "seller_id": seller_id,
+                "warning_id": warning_id,
+                "complaint_reference": warning.complaint_reference,
+            },
+        )
+        connection.commit()
+
+    delivery_status = _send_seller_complaint_warning(
+        seller["email"],
+        seller["store_name"],
+        warning.complaint_summary,
+        warning.complaint_reference,
+    )
+    with get_connection() as connection:
+        connection.execute(
+            "UPDATE seller_complaint_warnings SET delivery_status = ? WHERE id = ?",
+            (delivery_status, warning_id),
+        )
+        connection.commit()
+        row = connection.execute(
+            "SELECT * FROM seller_complaint_warnings WHERE id = ?",
+            (warning_id,),
+        ).fetchone()
+    return dict(row)
 
 
 @router.get("/marketplace/commissions")
@@ -1749,6 +1867,93 @@ def admin_customers(request: Request, search: str = Query(default="", max_length
             or query in customer["phone"].casefold()
         ]
     return customers
+
+
+@router.get("/users")
+def admin_user_activity(
+    request: Request, search: str = Query(default="", max_length=100)
+) -> list[dict]:
+    _authorize(request, "orders", "read")
+    query = search.strip()
+    pattern = f"%{query}%"
+    with get_connection() as connection:
+        rows = connection.execute(
+            """
+            WITH login_history AS (
+                SELECT events.user_id, events.provider, events.created_at
+                FROM user_login_events events
+                WHERE NOT EXISTS (
+                    SELECT 1
+                    FROM seller_login_attempts legacy
+                    JOIN users matched_user
+                      ON matched_user.email = legacy.email COLLATE NOCASE
+                    WHERE matched_user.id = events.user_id
+                      AND legacy.succeeded = 1
+                      AND legacy.created_at = events.created_at
+                )
+                UNION ALL
+                SELECT u.id,
+                       CASE WHEN u.role = 'seller'
+                            THEN 'seller-password' ELSE 'password' END,
+                       legacy.created_at
+                FROM seller_login_attempts legacy
+                JOIN users u ON u.email = legacy.email COLLATE NOCASE
+                WHERE legacy.succeeded = 1
+            ),
+            login_summary AS (
+                SELECT user_id, COUNT(*) AS login_count,
+                       MAX(created_at) AS last_login_at
+                FROM login_history
+                GROUP BY user_id
+            )
+            SELECT u.id, u.full_name, u.email, u.role, u.created_at,
+                   s.store_name,
+                   COALESCE(login_summary.login_count, 0) AS login_count,
+                   login_summary.last_login_at,
+                   (
+                       SELECT history.provider
+                       FROM login_history history
+                       WHERE history.user_id = u.id
+                       ORDER BY history.created_at DESC, history.provider DESC
+                       LIMIT 1
+                   ) AS last_login_provider,
+                   COALESCE(order_activity.order_count, 0) AS order_count,
+                   order_activity.last_order_at
+            FROM users u
+            LEFT JOIN sellers s ON s.user_id = u.id
+            LEFT JOIN login_summary ON login_summary.user_id = u.id
+            LEFT JOIN (
+                SELECT buyer_id, COUNT(*) AS order_count,
+                       MAX(created_at) AS last_order_at
+                FROM orders
+                WHERE buyer_id IS NOT NULL
+                GROUP BY buyer_id
+            ) order_activity ON order_activity.buyer_id = u.id
+            WHERE (? = '' OR u.full_name LIKE ? COLLATE NOCASE
+                   OR u.email LIKE ? COLLATE NOCASE
+                   OR u.role LIKE ? COLLATE NOCASE
+                   OR s.store_name LIKE ? COLLATE NOCASE)
+            ORDER BY login_summary.last_login_at DESC, u.created_at DESC
+            LIMIT 500
+            """,
+            (query, pattern, pattern, pattern, pattern),
+        ).fetchall()
+    return [
+        {
+            "id": row["id"],
+            "name": row["full_name"],
+            "email": row["email"],
+            "role": row["role"],
+            "store_name": row["store_name"],
+            "created_at": row["created_at"],
+            "login_count": row["login_count"],
+            "last_login_at": row["last_login_at"],
+            "last_login_provider": row["last_login_provider"],
+            "order_count": row["order_count"],
+            "last_order_at": row["last_order_at"],
+        }
+        for row in rows
+    ]
 
 
 @router.get("/notifications")

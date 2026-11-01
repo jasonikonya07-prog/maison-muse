@@ -28,6 +28,7 @@ import {
   Lightbulb,
 } from "lucide-react";
 import { formatKsh } from "../data/currency.js";
+import ProductImage from "../components/ProductImage.jsx";
 import {
   AGRICULTURE_BUSINESS_TYPE,
   AGRICULTURE_POLICY,
@@ -453,22 +454,23 @@ function SellerDashboard() {
       payout_account: profile.payout_account ?? "",
     });
     setError("");
-    const metrics = await fetchSellerDashboard();
-    setDashboard(metrics);
-    if (profile.status === "APPROVED") {
-      const [sellerProducts, sellerOrders, sellerPayouts] = await Promise.all([
-        fetchSellerProducts(),
-        fetchSellerOrders(),
-        fetchSellerPayouts(),
-      ]);
-      setProducts(sellerProducts);
-      setOrders(sellerOrders);
-      setPayouts(sellerPayouts);
-    } else {
+    if (profile.status !== "APPROVED") {
+      setDashboard(null);
       setProducts([]);
       setOrders([]);
       setPayouts([]);
+      return;
     }
+    const [metrics, sellerProducts, sellerOrders, sellerPayouts] = await Promise.all([
+      fetchSellerDashboard(),
+      fetchSellerProducts(),
+      fetchSellerOrders(),
+      fetchSellerPayouts(),
+    ]);
+    setDashboard(metrics);
+    setProducts(sellerProducts);
+    setOrders(sellerOrders);
+    setPayouts(sellerPayouts);
   }, []);
 
   useEffect(() => {
@@ -965,6 +967,40 @@ function SellerDashboard() {
     );
   }
 
+  if (seller.status === "SUSPENDED" && !demoMode) {
+    return (
+      <main className="seller-suspension-screen">
+        <header className="seller-topbar">
+          <Link className="marketplace-brand" to="/">maison <span>muse.</span></Link>
+          <div className="seller-topbar-actions">
+            <span className="seller-status-badge suspended">SUSPENDED</span>
+            <button type="button" className="marketplace-button secondary" onClick={handleLogout}>
+              <LogOut size={15} /> Sign out
+            </button>
+          </div>
+        </header>
+        <section className="seller-suspension-card" role="alert">
+          <span className="seller-suspension-icon"><Store size={25} /></span>
+          <span className="marketplace-eyebrow">SELLER ACCOUNT ACCESS</span>
+          <h1>Your seller account is suspended</h1>
+          <p>
+            Access to Seller Studio, orders, products, payouts, and account tools
+            is disabled while this suspension is in effect.
+          </p>
+          <div className="seller-suspension-reason">
+            <strong>Reason provided by Maison Muse</strong>
+            <p>{seller.review_note || "Please contact Maison Muse support for details about this suspension."}</p>
+          </div>
+          <p className="seller-suspension-help">
+            If you believe this is a mistake, contact Maison Muse support and
+            include your store name: <strong>{seller.store_name}</strong>.
+          </p>
+          <Link className="marketplace-button secondary" to="/">Return to storefront</Link>
+        </section>
+      </main>
+    );
+  }
+
   const navItems = [
     { id: "overview", label: "Overview & Analytics", icon: LayoutDashboard },
     { id: "products", label: "Product Inventory", icon: Package },
@@ -1206,7 +1242,7 @@ function SellerDashboard() {
                                 : current.filter((id) => id !== product.id),
                             )}
                           />
-                          <img src={product.image} alt="" />
+                          <ProductImage src={product.image} alt="" />
                           <div><strong>{product.name}</strong><small>{product.category} · {product.sku} · {formatKsh(product.price)} · {product.stock} in stock · {product.status ?? "ACTIVE"}{product.qc_status ? ` · ${product.qc_status.replaceAll("_", " ")}` : ""}</small><span className={`seller-stock-badge ${product.stock <= 0 ? "sold-out" : product.stock < 5 ? "low-stock" : "in-stock"}`}>{product.stock <= 0 ? "Sold Out" : product.stock < 5 ? "Low Stock" : "In Stock"}</span></div>
                           <button type="button" onClick={() => setProductPreview(product)}>Preview on Storefront</button>
                           <button type="button" disabled={demoMode} aria-label={`Edit ${product.name}`} onClick={() => setProductModal(product)}>Edit</button>
@@ -1386,7 +1422,7 @@ function SellerDashboard() {
               <button type="button" className="marketplace-icon-button" aria-label="Close preview" onClick={() => setProductPreview(null)}><X size={18} /></button>
             </header>
             <article className="seller-preview-product">
-              <img src={productPreview.image} alt={productPreview.name} />
+              <ProductImage src={productPreview.image} alt={productPreview.name} />
               <span className="marketplace-eyebrow">{productPreview.category}</span>
               <h3>{productPreview.name}</h3>
               <p>{productPreview.detail}</p>

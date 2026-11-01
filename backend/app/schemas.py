@@ -759,6 +759,13 @@ class SellerStatusUpdate(BaseModel):
     status: Literal["PENDING", "APPROVED", "SUSPENDED"]
 
 
+class SellerComplaintWarningInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    complaint_summary: str = Field(min_length=10, max_length=2000)
+    complaint_reference: str = Field(default="", max_length=100)
+
+
 class SellerReviewUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 

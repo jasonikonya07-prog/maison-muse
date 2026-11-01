@@ -3,6 +3,7 @@ import { createPortal } from "react-dom";
 import { ArrowRight, Check, MapPin, ShieldCheck, Smartphone, Store, X } from "lucide-react";
 import { formatKsh } from "../data/currency.js";
 import { useFeatures } from "../context/FeatureContext.jsx";
+import ProductImage from "./ProductImage.jsx";
 
 const CITIES = ["Nairobi", "Mombasa", "Nakuru", "Kisumu", "Eldoret", "Thika", "Other"];
 const DELIVERY_FEE = 250;
@@ -27,7 +28,14 @@ function getVendor(item) {
   };
 }
 
-function CheckoutModal({ items, subtotal, onClose, onFinish, onPlaceOrder }) {
+function CheckoutModal({
+  items,
+  subtotal,
+  user,
+  onClose,
+  onFinish,
+  onPlaceOrder,
+}) {
   const { verifiedSellerBadge } = useFeatures();
   const [form, setForm] = useState(initialForm);
   const [showPushPrompt, setShowPushPrompt] = useState(false);
@@ -129,6 +137,19 @@ function CheckoutModal({ items, subtotal, onClose, onFinish, onPlaceOrder }) {
               <p className="checkout-eyebrow">MAISON MUSE MARKETPLACE</p>
               <h1 id="multi-checkout-title">Your edit, <em>on its way.</em></h1>
               <p>One checkout, with each boutique fulfilled separately.</p>
+              {user?.role === "seller" && (
+                <p className="checkout-account-note" role="status">
+                  You’re signed in with your seller account. You can continue checkout;
+                  this order will be treated as a guest order and won’t appear in buyer
+                  order history.
+                </p>
+              )}
+              {!items.length && (
+                <p className="checkout-account-note" role="status">
+                  Your cart is empty. Close checkout to return to the store and add an
+                  available item.
+                </p>
+              )}
             </div>
             <div className="multi-checkout-grid">
               <form className="multi-checkout-form" onSubmit={(event) => { event.preventDefault(); setShowPushPrompt(true); }}>
@@ -153,7 +174,7 @@ function CheckoutModal({ items, subtotal, onClose, onFinish, onPlaceOrder }) {
                   <p className="multi-checkout-demo-note">Demo STK Push only. This workflow records a simulated payment and does not contact Safaricom or move money.</p>
                 </section>
                 {error && <p className="checkout-field-error" role="alert">{error}</p>}
-                <button className="checkout-submit" type="submit">Pay via M-Pesa (STK Push) · {formatKsh(total)} <ArrowRight size={16} /></button>
+                <button className="checkout-submit" type="submit" disabled={!items.length || isSubmitting}>Pay via M-Pesa (STK Push) · {formatKsh(total)} <ArrowRight size={16} /></button>
               </form>
 
               <aside className="multi-checkout-summary">
@@ -163,7 +184,7 @@ function CheckoutModal({ items, subtotal, onClose, onFinish, onPlaceOrder }) {
                     <h3>{verifiedSellerBadge && group.verified && <ShieldCheck size={14} />} {group.name}</h3>
                     {group.items.map((item) => (
                       <article key={item.cartKey}>
-                        <img src={item.image} alt="" />
+                        <ProductImage src={item.image} alt="" />
                         <div><strong>{item.name}</strong><small>{item.quantity} × {formatKsh(item.price)}</small></div>
                         <b>{formatKsh(item.price * item.quantity)}</b>
                       </article>

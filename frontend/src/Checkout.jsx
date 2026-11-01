@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { formatKsh } from "./data/currency.js";
+import ProductImage from "./components/ProductImage.jsx";
 
 const initialContact = {
   name: "",
@@ -271,7 +272,7 @@ function Checkout({ items, subtotal, onClose, onPlaceOrder }) {
                   {items.map((item) => (
                     <div className="checkout-summary-item" key={item.cartKey}>
                       <div className="checkout-summary-image">
-                        <img src={item.image} alt="" />
+                        <ProductImage src={item.image} alt="" />
                         <span>{item.quantity}</span>
                       </div>
                       <div className="checkout-summary-item-copy">

@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { formatKsh } from "../data/currency.js";
+import ProductImage from "./ProductImage.jsx";
 import { getFarmerWhatsAppUrl } from "../data/agriFarm.js";
 import { useFeatures } from "../context/FeatureContext.jsx";
 import {
@@ -125,7 +126,7 @@ function ProductModal({ product, availableStock, onClose, onAddToCart, onBuyNow 
         </button>
         <div className="product-modal-gallery">
           <div className="product-modal-image">
-            <img src={images[0]} alt={product.name} />
+            <ProductImage src={images[0]} alt={product.name} />
             <span className={`stock-badge ${isInStock ? "is-available" : "is-sold-out"}`}>
               <span />
               {isInStock ? `${availableStock} available` : "Sold out"}

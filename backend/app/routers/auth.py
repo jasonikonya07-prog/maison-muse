@@ -63,6 +63,18 @@ def _auth_response(row: sqlite3.Row, seller: sqlite3.Row | None = None) -> dict:
     }
 
 
+def _record_user_login(
+    connection: sqlite3.Connection,
+    user_id: int,
+    provider: str,
+    created_at: str | None = None,
+) -> None:
+    connection.execute(
+        "INSERT INTO user_login_events (user_id, provider, created_at) VALUES (?, ?, ?)",
+        (user_id, provider, created_at or datetime.now(timezone.utc).isoformat()),
+    )
+
+
 def _user_and_seller(connection: sqlite3.Connection, user_id: int):
     row = connection.execute(
         """SELECT id, full_name, email, password_hash, role, phone,
@@ -125,6 +137,7 @@ def register_user(registration: AuthRegistration) -> dict:
                 ),
             )
             user_id = cursor.lastrowid
+            _record_user_login(connection, user_id, "registration")
             seller = None
             if registration.role == "seller":
                 store_slug = _store_slug(registration.store_name, user_id, connection)
@@ -233,6 +246,8 @@ def login_user(credentials: AuthLogin, request: Request) -> dict:
         valid = user is not None and password_matches(
             credentials.password, user["password_hash"]
         )
+        if valid:
+            _record_user_login(connection, user["id"], "password", now.isoformat())
         connection.execute(
             """
             INSERT INTO seller_login_attempts (email, ip_address, succeeded, created_at)
@@ -302,7 +317,7 @@ def _verify_google_credential(credential: str) -> dict:
     return identity
 
 
-def _login_with_google_demo() -> dict:
+def _login_with_google_demo(request: Request) -> dict:
     environment = os.getenv("APP_ENV", "production").strip().casefold()
     if environment not in {"development", "dev", "local", "testing"}:
         raise HTTPException(
@@ -346,20 +361,21 @@ def _login_with_google_demo() -> dict:
                 """,
                 (cursor.lastrowid,),
             ).fetchone()
-        connection.commit()
         if user["role"] != "buyer":
             raise HTTPException(
                 status_code=403,
                 detail="Google sign-in is for buyer accounts only.",
             )
+        _record_user_login(connection, user["id"], "google-demo")
+        connection.commit()
     return {**_auth_response(user), "provider": "google"}
 
 
 @router.post("/google")
-def login_with_google(credentials: GoogleAuthInput) -> dict:
+def login_with_google(credentials: GoogleAuthInput, request: Request) -> dict:
     ensure_jwt_configured()
     if credentials.simulation:
-        return _login_with_google_demo()
+        return _login_with_google_demo(request)
     identity = _verify_google_credential(credentials.credential)
     email = str(identity["email"]).casefold()
     google_subject = str(identity["sub"])
@@ -411,6 +427,8 @@ def login_with_google(credentials: GoogleAuthInput) -> dict:
             ).fetchone()
         if user["role"] != "buyer":
             raise HTTPException(status_code=403, detail="Google sign-in is for buyers only.")
+        _record_user_login(connection, user["id"], "google")
+        connection.commit()
     return {**_auth_response(user), "provider": "google"}
 
 

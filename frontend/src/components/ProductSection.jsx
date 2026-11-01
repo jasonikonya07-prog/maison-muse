@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { formatKsh } from "../data/currency.js";
+import ProductImage from "./ProductImage.jsx";
 import { getFarmerWhatsAppUrl } from "../data/agriFarm.js";
 import { useFeatures } from "../context/FeatureContext.jsx";
 import "../seller/Marketplace.css";
@@ -138,7 +139,7 @@ function ProductSection({
                 }}
               >
                 <div className={`product-image-wrap tone-${product.tone}`}>
-                  <img src={product.image} alt={product.name} loading="lazy" />
+                  <ProductImage src={product.image} alt={product.name} loading="lazy" />
                   <span
                     className={`product-tag ${product.tagColor ?? ""}`}
                     style={{

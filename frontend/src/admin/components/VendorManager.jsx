@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, ExternalLink, RefreshCw, ShieldAlert, Store } from "lucide-react";
+import { Check, ExternalLink, Mail, RefreshCw, ShieldAlert, Store } from "lucide-react";
 import { formatKsh } from "../../data/currency.js";
 import {
   fetchMarketplaceManagement,
+  createMarketplaceVendorWarning,
+  fetchMarketplaceVendorWarnings,
   reviewMarketplaceVendor,
   updateMarketplaceVendor,
 } from "../../services/api.js";
@@ -36,6 +38,12 @@ function VendorManager() {
   const [reviewTarget, setReviewTarget] = useState(null);
   const [reviewAction, setReviewAction] = useState("");
   const [reviewReason, setReviewReason] = useState("");
+  const [warningTarget, setWarningTarget] = useState(null);
+  const [warningSummary, setWarningSummary] = useState("");
+  const [warningReference, setWarningReference] = useState("");
+  const [warningHistory, setWarningHistory] = useState([]);
+  const [warningBusy, setWarningBusy] = useState(false);
+  const [warningNotice, setWarningNotice] = useState("");
 
   const refresh = useCallback(async () => {
     setError("");
@@ -86,6 +94,48 @@ function VendorManager() {
     setReviewTarget(vendor);
     setReviewAction(action);
     setReviewReason("");
+  };
+
+  const openWarning = async (vendor) => {
+    setWarningTarget(vendor);
+    setWarningSummary("");
+    setWarningReference("");
+    setWarningNotice("");
+    setError("");
+    setWarningBusy(true);
+    try {
+      setWarningHistory(await fetchMarketplaceVendorWarnings(vendor.id));
+    } catch (loadError) {
+      setError(loadError.message);
+    } finally {
+      setWarningBusy(false);
+    }
+  };
+
+  const sendWarning = async () => {
+    if (!warningTarget || !warningSummary.trim()) return;
+    setWarningBusy(true);
+    setError("");
+    setWarningNotice("");
+    try {
+      const warning = await createMarketplaceVendorWarning(warningTarget.id, {
+        complaint_summary: warningSummary.trim(),
+        complaint_reference: warningReference.trim(),
+      });
+      setWarningHistory((current) => [warning, ...current]);
+      setWarningNotice(
+        warning.delivery_status === "SENT"
+          ? `Warning email sent to ${warningTarget.email}.`
+          : warning.delivery_status === "NOT_CONFIGURED"
+            ? "Warning recorded, but email was not sent: configure RESEND_API_KEY and RESEND_FROM_EMAIL."
+            : "Warning recorded, but email delivery failed. Check Resend settings and backend mail logs.",
+      );
+      await refresh();
+    } catch (warningError) {
+      setError(warningError.message);
+    } finally {
+      setWarningBusy(false);
+    }
   };
 
   const changeStatus = async (vendor, status) => {
@@ -158,6 +208,7 @@ function VendorManager() {
                 </>}
                 {(vendor.status === "SUSPENDED" || vendor.review_state === "UNDER_AUDIT") && <button type="button" className="marketplace-button primary" disabled={busy} onClick={() => openReview(vendor, "RESTORE")}>Restore seller</button>}
                 {vendor.status !== "PENDING" && <a className="marketplace-button secondary" href={`/store/${encodeURIComponent(vendor.store_slug)}`} target="_blank" rel="noreferrer">View public store</a>}
+                <button type="button" className="marketplace-button secondary" disabled={busy || warningBusy} onClick={() => openWarning(vendor)}><Mail size={15} /> Send complaint warning</button>
               </div>
             </article>;
           })}
@@ -170,6 +221,28 @@ function VendorManager() {
           <label className="marketplace-review-reason">{["REJECT", "REQUEST_INFO", "UNDER_AUDIT", "SUSPEND"].includes(reviewAction) ? "Reason / information requested" : "Internal review note (optional)"}<textarea autoFocus required={["REJECT", "REQUEST_INFO", "UNDER_AUDIT", "SUSPEND"].includes(reviewAction)} minLength={["REJECT", "REQUEST_INFO", "UNDER_AUDIT", "SUSPEND"].includes(reviewAction) ? 3 : undefined} rows="4" maxLength="1000" value={reviewReason} onChange={(event) => setReviewReason(event.target.value)} /></label>
           {error && <p className="marketplace-error" role="alert">{error}</p>}
           <footer><button type="button" className="marketplace-button secondary" onClick={() => setReviewTarget(null)}>Cancel</button><button type="button" className="marketplace-button primary" disabled={busy} onClick={runReview}>{busy ? "Saving…" : "Confirm action"}</button></footer>
+        </section>
+      </div>}
+      {warningTarget && <div className="marketplace-modal-backdrop" onMouseDown={() => !warningBusy && setWarningTarget(null)}>
+        <section className="marketplace-modal vendor-review-modal" role="dialog" aria-modal="true" aria-labelledby="seller-warning-title" onMouseDown={(event) => event.stopPropagation()}>
+          <header><div><span className="marketplace-eyebrow">CUSTOMER COMPLAINT</span><h2 id="seller-warning-title">Send seller warning</h2></div></header>
+          <p>Seller: <strong>{warningTarget.store_name}</strong> · {warningTarget.email}</p>
+          <p className="vendor-warning-neutral">This sends a factual request for the seller’s response; it does not declare the complaint proven.</p>
+          <label className="marketplace-review-reason">Complaint summary<textarea autoFocus required minLength="10" rows="4" maxLength="2000" value={warningSummary} onChange={(event) => setWarningSummary(event.target.value)} placeholder="Summarize the customer’s complaint and any relevant order facts." /></label>
+          <label className="marketplace-review-reason">Order or support reference (optional)<input maxLength="100" value={warningReference} onChange={(event) => setWarningReference(event.target.value)} placeholder="Order ID or support ticket reference" /></label>
+          {error && <p className="marketplace-error" role="alert">{error}</p>}
+          {warningNotice && <p className="marketplace-notice" role="status">{warningNotice}</p>}
+          <div className="vendor-warning-history">
+            <strong>Recent warnings</strong>
+            {warningBusy && !warningHistory.length ? <p>Loading warning history…</p> : warningHistory.length ? warningHistory.slice(0, 5).map((warning) => (
+              <article key={warning.id}>
+                <span className={`vendor-warning-delivery ${warning.delivery_status.toLowerCase()}`}>{warning.delivery_status.replace("_", " ")}</span>
+                <small>{new Date(warning.created_at).toLocaleString()}</small>
+                <p>{warning.complaint_summary}</p>
+              </article>
+            )) : <p>No warnings recorded for this seller.</p>}
+          </div>
+          <footer><button type="button" className="marketplace-button secondary" disabled={warningBusy} onClick={() => setWarningTarget(null)}>Close</button><button type="button" className="marketplace-button primary" disabled={warningBusy || warningSummary.trim().length < 10} onClick={sendWarning}>{warningBusy ? "Sending…" : "Record & send warning"}</button></footer>
         </section>
       </div>}
     </div>

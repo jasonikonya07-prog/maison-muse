@@ -5,10 +5,8 @@ import os
 import re
 import secrets
 import sqlite3
-import smtplib
 import uuid
 from datetime import date, datetime, timedelta, timezone
-from email.message import EmailMessage
 
 from fastapi import (
     APIRouter,
@@ -32,6 +30,7 @@ from app.config import (
     demo_seller_approval_enabled,
 )
 from app.database import get_connection
+from app.email_delivery import send_email
 from app.order_tracking import (
     apply_seller_fulfillment,
     effective_fulfillment_status,
@@ -67,56 +66,31 @@ logger = logging.getLogger(__name__)
 def _deliver_seller_update_code(
     recipient: str, code: str, changed_email: bool, changed_phone: bool
 ) -> None:
-    host = os.getenv("SMTP_HOST", "").strip()
-    if not host:
-        if os.getenv("APP_ENV", "production").strip().casefold() in {
-            "development",
-            "dev",
-            "local",
-            "testing",
-        }:
-            logger.warning(
-                "Development mock email to %s: profile update code %s (expires in 10 minutes).",
-                recipient,
-                code,
-            )
-            return
-        raise HTTPException(
-            status_code=503,
-            detail="Profile verification email is not configured. Contact the store administrator.",
-        )
-
-    message = EmailMessage()
-    message["Subject"] = "Confirm your Maison Muse seller profile update"
-    message["From"] = os.getenv("SMTP_FROM", os.getenv("SMTP_USERNAME", "")).strip()
-    message["To"] = recipient
     changes = []
     if changed_email:
         changes.append("business email")
     if changed_phone:
         changes.append("business phone / M-Pesa line")
-    message.set_content(
+    text = (
         "Use this one-time code to confirm your Maison Muse seller profile update:\n\n"
         f"{code}\n\n"
         f"Requested changes: {', '.join(changes)}.\n"
         "The code expires in 10 minutes. If you did not request this change, ignore this email."
     )
-    port = int(os.getenv("SMTP_PORT", "587"))
-    username = os.getenv("SMTP_USERNAME", "").strip()
-    password = os.getenv("SMTP_PASSWORD", "")
-    try:
-        with smtplib.SMTP(host, port, timeout=10) as client:
-            if os.getenv("SMTP_STARTTLS", "true").strip().casefold() == "true":
-                client.starttls()
-            if username:
-                client.login(username, password)
-            client.send_message(message)
-    except (OSError, smtplib.SMTPException) as error:
-        logger.exception("Could not send seller profile verification email.")
+    delivery = send_email(
+        recipient,
+        "Confirm your Maison Muse seller profile update",
+        text,
+    )
+    if delivery != "SENT":
         raise HTTPException(
             status_code=503,
-            detail="Could not send the profile verification email. Please try again.",
-        ) from error
+            detail=(
+                "Profile verification email is not configured."
+                if delivery == "NOT_CONFIGURED"
+                else "Could not send the profile verification email. Please try again."
+            ),
+        )
 
 
 def _seller_payload(row: sqlite3.Row, include_payout: bool = False) -> dict:
@@ -180,7 +154,11 @@ def _set_seller_session(user_id: int, response: Response) -> None:
     )
 
 
-def require_seller(request: Request, approved: bool = False) -> sqlite3.Row:
+def require_seller(
+    request: Request,
+    approved: bool = False,
+    allow_suspended: bool = False,
+) -> sqlite3.Row:
     authorization = request.headers.get("authorization", "")
     scheme, _, access_token = authorization.partition(" ")
     if scheme.casefold() == "bearer" and access_token:
@@ -218,6 +196,12 @@ def require_seller(request: Request, approved: bool = False) -> sqlite3.Row:
             ).fetchone()
     if seller is None:
         raise HTTPException(status_code=401, detail="Seller session has expired.")
+    if seller["status"] == "SUSPENDED" and not allow_suspended:
+        reason = seller["review_note"].strip() or "No additional reason was provided."
+        raise HTTPException(
+            status_code=403,
+            detail=f"Your seller account is suspended. Reason: {reason}",
+        )
     if approved and (
         seller["status"] != "APPROVED" or seller["review_state"] == "UNDER_AUDIT"
     ):
@@ -400,6 +384,14 @@ def login_seller(credentials: SellerLogin, request: Request, response: Response)
         valid = user is not None and _password_matches(
             credentials.password, user["password_hash"]
         )
+        if valid:
+            connection.execute(
+                """
+                INSERT INTO user_login_events (user_id, provider, created_at)
+                VALUES (?, 'seller-password', ?)
+                """,
+                (user["id"], now.isoformat()),
+            )
         connection.execute(
             """
             INSERT INTO seller_login_attempts (email, ip_address, succeeded, created_at)
@@ -432,7 +424,7 @@ def logout_seller(request: Request, response: Response) -> dict:
 
 @router.get("/me")
 def seller_me(request: Request) -> dict:
-    seller = require_seller(request)
+    seller = require_seller(request, allow_suspended=True)
     return _seller_payload(seller, include_payout=True)
 
 

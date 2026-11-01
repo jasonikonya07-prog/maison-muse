@@ -391,6 +391,75 @@
   font-family: "DM Sans", sans-serif;
 }
 
+.seller-suspension-screen {
+  min-height: 100vh;
+  background: #f8f6f4;
+  color: #3f383a;
+  font-family: "DM Sans", sans-serif;
+}
+
+.seller-suspension-card {
+  width: min(680px, calc(100% - 36px));
+  display: grid;
+  justify-items: start;
+  gap: 14px;
+  margin: clamp(40px, 10vh, 100px) auto;
+  border: 1px solid #eee3e1;
+  border-radius: 16px;
+  padding: clamp(24px, 5vw, 44px);
+  background: #fff;
+  box-shadow: 0 18px 50px #5a45420d;
+}
+
+.seller-suspension-icon {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: #fff0ef;
+  color: #a23f42;
+}
+
+.seller-suspension-card h1 {
+  margin: 0;
+  color: #443b3d;
+  font-family: Georgia, serif;
+  font-size: clamp(26px, 5vw, 36px);
+  font-weight: 500;
+}
+
+.seller-suspension-card > p {
+  margin: 0;
+  color: #7d7275;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.seller-suspension-reason {
+  width: 100%;
+  border: 1px solid #f1dedd;
+  border-radius: 10px;
+  padding: 16px;
+  background: #fff8f7;
+  color: #62484a;
+}
+
+.seller-suspension-reason strong {
+  font-size: 12px;
+}
+
+.seller-suspension-reason p {
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.seller-suspension-help {
+  margin-bottom: 4px !important;
+}
+
 .seller-topbar {
   min-height: 72px;
   display: flex;
@@ -970,6 +1039,56 @@
 
 .vendor-review-modal .marketplace-review-reason textarea {
   resize: vertical;
+}
+
+.vendor-warning-neutral {
+  border-left: 2px solid #c99346;
+  padding: 8px 10px;
+  background: #fffbf3;
+  line-height: 1.5;
+}
+
+.vendor-warning-history {
+  display: grid;
+  gap: 9px;
+  max-height: 220px;
+  overflow: auto;
+  margin-top: 15px;
+  border-top: 1px solid #eee9e7;
+  padding-top: 12px;
+  color: #675b5e;
+  font-size: 11px;
+}
+
+.vendor-warning-history > article {
+  border: 1px solid #f0ebe9;
+  border-radius: 7px;
+  padding: 9px;
+}
+
+.vendor-warning-history > article small {
+  margin-left: 8px;
+  color: #8c8184;
+}
+
+.vendor-warning-history > article p {
+  margin: 7px 0 0;
+  line-height: 1.45;
+}
+
+.vendor-warning-delivery {
+  color: #986d2d;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.vendor-warning-delivery.sent {
+  color: #44764b;
+}
+
+.vendor-warning-delivery.failed,
+.vendor-warning-delivery.not_configured {
+  color: #a23f42;
 }
 
 .commission-settings-form {

@@ -4142,6 +4142,19 @@ input:focus-visible {
   font-size: 11px;
 }
 
+.multi-checkout-title .checkout-account-note {
+  max-width: 560px;
+  margin: 12px auto 0;
+  padding: 10px 12px;
+  border: 1px solid #ead8b9;
+  border-radius: 7px;
+  background: #fff9ee;
+  color: #765a2f;
+  font-size: 11px;
+  line-height: 1.5;
+  text-align: left;
+}
+
 .multi-checkout-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 325px;

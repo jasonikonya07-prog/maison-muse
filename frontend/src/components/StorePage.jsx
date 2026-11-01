@@ -4,6 +4,7 @@ import { MessageCircle, Phone, ShieldCheck, Star, Store } from "lucide-react";
 import { formatKsh } from "../data/currency.js";
 import { fetchPublicStore } from "../services/api.js";
 import { useFeatures } from "../context/FeatureContext.jsx";
+import ProductImage from "./ProductImage.jsx";
 import "../seller/Marketplace.css";
 
 function StorePage() {
@@ -73,7 +74,7 @@ function StorePage() {
       <section className="store-catalog">
         <div className="store-catalog-heading"><span className="marketplace-eyebrow">THE STORE EDIT</span><h2>Shop {store.store_name}</h2><p>{store.store_bio || "Thoughtful finds, selected by this Maison Muse seller."}</p></div>
         {products.length ? <div className="store-product-grid">{products.map((product) => <article className="store-product-card" key={product.id}>
-          <div><img src={product.image} alt={product.name} loading="lazy" />{product.stock <= 0 && <span className="store-sold-out">Sold out</span>}</div>
+          <div><ProductImage src={product.image} alt={product.name} loading="lazy" />{product.stock <= 0 && <span className="store-sold-out">Sold out</span>}</div>
           <span>{product.category}</span><h3>{product.name}</h3><p>{product.detail}</p><strong>{formatKsh(product.price)}</strong>
           <small>Sold &amp; fulfilled by {store.store_name} {verifiedSellerBadge && <ShieldCheck size={13} aria-label="Verified seller" />}</small>
         </article>)}</div> : <p className="marketplace-empty">This store is preparing its first collection.</p>}

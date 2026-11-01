@@ -40,8 +40,6 @@ def _buyer_id_from_request(request: Request, connection) -> int | None:
     if scheme.casefold() != "bearer" or not token:
         raise HTTPException(status_code=401, detail="Your sign-in is invalid.")
     claims = decode_access_token(token)
-    if claims.get("role") != "buyer":
-        raise HTTPException(status_code=403, detail="A buyer account is required.")
     try:
         user_id = int(claims["sub"])
     except (KeyError, TypeError, ValueError):
@@ -49,8 +47,12 @@ def _buyer_id_from_request(request: Request, connection) -> int | None:
     user = connection.execute(
         "SELECT id, role FROM users WHERE id = ?", (user_id,)
     ).fetchone()
-    if user is None or user["role"] != "buyer":
+    if user is None or user["role"] != claims.get("role"):
         raise HTTPException(status_code=401, detail="Your buyer account is unavailable.")
+    if user["role"] == "seller":
+        return None
+    if user["role"] != "buyer":
+        raise HTTPException(status_code=403, detail="A buyer account is required.")
     return user_id
 
 

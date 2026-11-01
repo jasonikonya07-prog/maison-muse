@@ -66,7 +66,7 @@ AGRI_FARM_PRODUCTS = [
         "description": "Pedigree Friesian in-calf heifer offered by a local farm. Buyers should arrange an in-person inspection and verify veterinary and breeding records before purchase.",
         "price": 185000,
         "stock": 1,
-        "photo": "photo-1546445317-29f4545f9d52",
+        "photo": "/farm-cattle.svg",
         "farmer_name": "Green Valley Farm",
         "features": ["Friesian dairy breed", "Reported five months in calf", "Inspect and verify records with the farmer"],
     },
@@ -80,7 +80,7 @@ AGRI_FARM_PRODUCTS = [
         "description": "Purebred Fleckvieh dairy cow with seller-reported yield of up to 30 litres per day. Arrange inspection and independently verify production and veterinary records.",
         "price": 220000,
         "stock": 1,
-        "photo": "photo-1570042707227-2c976f9d3b0c",
+        "photo": "/farm-cattle.svg",
         "farmer_name": "Highland Dairy Farm",
         "features": ["Fleckvieh breed", "Seller-reported 30 litres/day", "Inspect and verify production records"],
     },
@@ -214,7 +214,11 @@ def seed_products(connection: sqlite3.Connection) -> None:
                    name = excluded.name, parent_id = excluded.parent_id""",
             (product["category"], f"agriculture-livestock-{category_slug}", agriculture["id"]),
         )
-        image_url = AGRI_IMAGE_BASE.format(photo=product["photo"])
+        image_url = (
+            product["photo"]
+            if product["photo"].startswith("/")
+            else AGRI_IMAGE_BASE.format(photo=product["photo"])
+        )
         features_json = json.dumps(product["features"])
         connection.execute(
             """
@@ -236,6 +240,10 @@ def seed_products(connection: sqlite3.Connection) -> None:
                 :features_json, :image, :brand, '', :farmer_whatsapp,
                 :farmer_whatsapp, 0, 1, :farmer_name, :farmer_whatsapp
             )
+            ON CONFLICT(id) DO UPDATE SET
+                image = excluded.image,
+                image_url = excluded.image_url,
+                gallery_json = excluded.gallery_json
             """,
             {
                 **product,
