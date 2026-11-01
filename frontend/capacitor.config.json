@@ -1,0 +1,15 @@
+{
+  "appId": "com.maisonmuse.app",
+  "appName": "Maison Muse",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "StatusBar": {
+      "backgroundColor": "#f7f7f5",
+      "style": "DARK",
+      "overlaysWebView": false
+    }
+  }
+}

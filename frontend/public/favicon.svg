@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title">
+  <title id="title">Maison Muse monogram</title>
+  <rect width="512" height="512" fill="#0F172A"/>
+  <path
+    d="M126 362V170l130 123 130-123v192M184 362V245l72 68 72-68v117"
+    fill="none"
+    stroke="#D97706"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="19"
+  />
+  <path
+    d="M144 354V192l112 105 112-105v162"
+    fill="none"
+    stroke="#FAF6F3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    stroke-width="7"
+  />
+  <path
+    d="M397 103v34m-17-17h34m-29-12 24 24m0-24-24 24"
+    fill="none"
+    stroke="#E11D48"
+    stroke-linecap="round"
+    stroke-width="6"
+  />
+</svg>

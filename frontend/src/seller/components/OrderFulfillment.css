@@ -1,0 +1,248 @@
+.fulfillment-hub {
+  display: grid;
+  gap: 20px;
+}
+
+.fulfillment-heading,
+.fulfillment-order-top,
+.fulfillment-order-footer,
+.fulfillment-waybill > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.fulfillment-heading h2 {
+  margin: 5px 0 0;
+}
+
+.fulfillment-heading h2 small {
+  color: #77706c;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.fulfillment-order-list {
+  display: grid;
+  gap: 14px;
+}
+
+.fulfillment-order-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid #e8e1de;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.fulfillment-order-top h3 {
+  margin: 4px 0;
+  font-size: 16px;
+}
+
+.fulfillment-order-top small,
+.fulfillment-order-footer small {
+  display: block;
+  margin-top: 4px;
+  color: #7d7470;
+}
+
+.fulfillment-items,
+.fulfillment-address {
+  margin: 0;
+  color: #534a46;
+  line-height: 1.55;
+}
+
+.fulfillment-address {
+  color: #756a65;
+  font-size: 13px;
+}
+
+.fulfillment-dispatch-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.fulfillment-dispatch-grid label {
+  display: grid;
+  gap: 6px;
+  color: #5e5551;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.fulfillment-dispatch-grid input,
+.fulfillment-dispatch-grid select {
+  min-width: 0;
+  padding: 10px 11px;
+  border: 1px solid #ded5d1;
+  border-radius: 8px;
+  background: #fff;
+  color: #342d2a;
+  font: inherit;
+}
+
+.fulfillment-order-footer {
+  padding-top: 12px;
+  border-top: 1px solid #eee8e5;
+}
+
+.fulfillment-order-footer > span {
+  color: #6f6561;
+  font-size: 12px;
+}
+
+.fulfillment-order-footer > span strong {
+  display: block;
+  color: #312a27;
+  font-size: 15px;
+}
+
+.fulfillment-order-footer > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.fulfillment-terminal {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #417b61;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.fulfillment-message {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+
+.fulfillment-message.error {
+  background: #fff0ef;
+  color: #9c3935;
+}
+
+.fulfillment-message.success {
+  background: #eef7f0;
+  color: #37684a;
+}
+
+.fulfillment-modal-backdrop {
+  position: fixed;
+  z-index: 1200;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgb(26 21 19 / 55%);
+}
+
+.fulfillment-waybill {
+  display: grid;
+  gap: 18px;
+  width: min(100%, 560px);
+  max-height: 90vh;
+  overflow: auto;
+  padding: 22px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 20px 70px rgb(0 0 0 / 22%);
+}
+
+.fulfillment-waybill h2 {
+  margin: 5px 0 0;
+}
+
+.fulfillment-label-print {
+  display: grid;
+  gap: 10px;
+  padding: 20px;
+  border: 1px dashed #aa9b94;
+  color: #27211f;
+  font-family: Arial, sans-serif;
+}
+
+.fulfillment-label-brand,
+.fulfillment-label-order {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fulfillment-label-brand {
+  padding-bottom: 10px;
+  border-bottom: 2px solid #302522;
+  font-weight: 800;
+}
+
+.fulfillment-label-brand span,
+.fulfillment-label-order span {
+  color: #6f625c;
+  font-size: 11px;
+}
+
+.fulfillment-label-print p {
+  margin: 4px 0;
+  line-height: 1.5;
+}
+
+.fulfillment-label-lines {
+  display: grid;
+  gap: 5px;
+  padding: 10px 0;
+  border-top: 1px solid #ddd4cf;
+  border-bottom: 1px solid #ddd4cf;
+}
+
+.fulfillment-label-print img {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto;
+}
+
+.fulfillment-label-print > small {
+  text-align: center;
+}
+
+@media (max-width: 700px) {
+  .fulfillment-order-top,
+  .fulfillment-order-footer {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .fulfillment-dispatch-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fulfillment-order-footer > div {
+    justify-content: flex-start;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+
+  .fulfillment-label-print,
+  .fulfillment-label-print * {
+    visibility: visible !important;
+  }
+
+  .fulfillment-label-print {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    border: 0;
+  }
+}

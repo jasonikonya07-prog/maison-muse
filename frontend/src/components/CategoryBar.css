@@ -1,0 +1,37 @@
+.catalog-category-bar {
+  border-top: 1px solid #f0ece9;
+  background: #fffdfa;
+}
+
+.catalog-category-scroll {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  padding: 10px max(20px, calc((100vw - 1280px) / 2));
+  scrollbar-width: thin;
+}
+
+.catalog-category-link {
+  flex: 0 0 auto;
+  border: 1px solid #e8dfda;
+  border-radius: 999px;
+  padding: 8px 13px;
+  color: #655b5d;
+  font-size: 12px;
+  text-decoration: none;
+  transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+
+.catalog-category-link:hover,
+.catalog-category-link.active {
+  border-color: #b97a58;
+  background: #fbf3ef;
+  color: #8a4c34;
+}
+
+@media (max-width: 640px) {
+  .catalog-category-scroll {
+    padding: 9px 14px;
+  }
+}

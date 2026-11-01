@@ -1,0 +1,241 @@
+.agri-hub {
+  min-height: 100vh;
+  background: #f7f8f3;
+  color: #23332a;
+}
+
+.agri-hub-embedded {
+  min-height: 0;
+  background: transparent;
+}
+
+.agri-hub-embedded .agri-hub-hero {
+  padding-top: 24px;
+}
+
+.agri-hub-embedded .agri-hub-products {
+  padding-bottom: 30px;
+}
+
+.agri-hub-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px max(24px, calc((100vw - 1200px) / 2));
+  border-bottom: 1px solid #e4e9e1;
+  background: #fff;
+}
+
+.agri-hub-brand,
+.agri-hub-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #315d3e;
+  text-decoration: none;
+}
+
+.agri-hub-brand {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.agri-hub-brand strong {
+  display: block;
+  color: #718775;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.agri-hub-back {
+  font-size: 12px;
+}
+
+.agri-hub-hero {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 56px 24px 32px;
+}
+
+.agri-hub-eyebrow,
+.agri-product-category {
+  color: #568060;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.agri-hub-hero h1 {
+  margin: 10px 0 4px;
+  color: #244b30;
+  font-family: var(--serif, Georgia, serif);
+  font-size: clamp(38px, 6vw, 64px);
+}
+
+.agri-hub-hero > p {
+  margin: 0;
+  color: #69766b;
+  font-size: 15px;
+}
+
+.agri-hub-notice {
+  max-width: 850px;
+  margin-top: 22px;
+  padding: 14px 16px;
+  border: 1px solid #d5e5d6;
+  border-radius: 10px;
+  background: #edf6ed;
+  color: #315b39;
+  font-size: 12px;
+  line-height: 1.65;
+}
+
+.agri-hub-tabs {
+  display: flex;
+  gap: 8px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 24px 20px;
+  overflow-x: auto;
+}
+
+.agri-hub-tabs button {
+  flex: 0 0 auto;
+  padding: 10px 14px;
+  border: 1px solid #dce5dc;
+  border-radius: 999px;
+  background: #fff;
+  color: #536357;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.agri-hub-tabs button.active {
+  border-color: #347347;
+  background: #347347;
+  color: white;
+}
+
+.agri-hub-products {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: 18px;
+  max-width: 1200px;
+  min-height: 240px;
+  margin: 0 auto;
+  padding: 8px 24px 56px;
+}
+
+.agri-product-card {
+  overflow: hidden;
+  border: 1px solid #e7e9e2;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 6px 22px rgb(40 60 43 / 5%);
+}
+
+.agri-product-card > img {
+  width: 100%;
+  height: 230px;
+  display: block;
+  object-fit: cover;
+  background: #e7ece5;
+}
+
+.agri-product-content {
+  padding: 17px;
+}
+
+.agri-product-content h2 {
+  margin: 8px 0;
+  color: #28392e;
+  font-family: var(--serif, Georgia, serif);
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.agri-product-content p,
+.agri-product-content small {
+  color: #69746c;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.agri-product-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.agri-product-footer > strong {
+  color: #244b30;
+  font-size: 18px;
+}
+
+.agri-product-footer a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 13px;
+  border-radius: 7px;
+  background: #16834a;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.agri-product-footer a:hover {
+  background: #11693a;
+}
+
+.agri-contact-unavailable,
+.agri-hub-error,
+.agri-hub-empty {
+  color: #68756b;
+  font-size: 13px;
+}
+
+.agri-hub-error,
+.agri-hub-empty {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 24px;
+}
+
+.agri-hub-error {
+  color: #a53d3d;
+}
+
+@media (max-width: 600px) {
+  .agri-hub-header {
+    padding: 14px 16px;
+  }
+
+  .agri-hub-hero {
+    padding: 38px 16px 24px;
+  }
+
+  .agri-hub-tabs {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .agri-hub-products {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+
+  .agri-product-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

@@ -1,0 +1,627 @@
+[
+  {
+    "id": "perf-01",
+    "name": "Poême Eau De Parfum",
+    "brand": "Maison Muse",
+    "category": "Perfumes & Fragrances",
+    "price": 8200,
+    "oldPrice": 10900,
+    "discount": "-25%",
+    "rating": 4.9,
+    "reviewsCount": 486,
+    "tag": "BEST SELLER",
+    "tagColor": "bg-rose-600",
+    "images": [
+      "https://images.unsplash.com/photo-1615634260167-c8cdede054de?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "A luminous floral fragrance that opens with sunlit citrus before unfolding into a bouquet of white blossoms. Soft woods and warm musk leave a graceful trail from morning plans to late evenings.",
+    "details": {
+      "scentNotes": "Bergamot, white florals, sandalwood, musk",
+      "wearTime": "6–8 hours",
+      "volume": "50 ml",
+      "concentration": "Eau de parfum"
+    },
+    "inStock": true
+  },
+  {
+    "id": "perf-02",
+    "name": "Velvet Rose & Oud",
+    "brand": "Maison Muse",
+    "category": "Perfumes & Fragrances",
+    "price": 11600,
+    "oldPrice": 14500,
+    "discount": "-20%",
+    "rating": 4.9,
+    "reviewsCount": 392,
+    "tag": "VIRAL PICK",
+    "tagColor": "bg-purple-600",
+    "images": [
+      "https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "Deep, velvety rose meets the smoky richness of oud for a fragrance that feels unmistakably special. A hint of saffron and amber gives this elegant blend a beautifully lingering finish.",
+    "details": {
+      "scentNotes": "Damask rose, saffron, amber, oud",
+      "wearTime": "8–10 hours",
+      "volume": "75 ml",
+      "concentration": "Eau de parfum"
+    },
+    "inStock": true
+  },
+  {
+    "id": "perf-03",
+    "name": "Vanilla Silk Body Mist",
+    "brand": "Glow Lab",
+    "category": "Perfumes & Fragrances",
+    "price": 3200,
+    "oldPrice": 4000,
+    "discount": "-20%",
+    "rating": 4.8,
+    "reviewsCount": 561,
+    "tag": "BEST SELLER",
+    "tagColor": "bg-amber-500",
+    "images": [
+      "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "A soft cloud of creamy vanilla wraps the skin in a cozy, just-showered feeling. Layer it with your favorite perfume for an easy signature that stays close and comforting.",
+    "details": {
+      "scentNotes": "Vanilla bean, cashmere, white musk",
+      "wearTime": "3–4 hours; layer as desired",
+      "volume": "150 ml",
+      "concentration": "Fragrance mist"
+    },
+    "inStock": true
+  },
+  {
+    "id": "perf-04",
+    "name": "Smoked Vanilla Oud",
+    "brand": "Maison Muse",
+    "category": "Perfumes & Fragrances",
+    "price": 9900,
+    "oldPrice": 12000,
+    "discount": "-18%",
+    "rating": 4.8,
+    "reviewsCount": 274,
+    "tag": "TRENDING",
+    "tagColor": "bg-purple-600",
+    "images": [
+      "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1615634260167-c8cdede054de?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "Toasted vanilla brings a smooth sweetness to the quiet drama of smoky oud and polished woods. One or two sprays create a warm, intimate scent made for cool evenings and memorable entrances.",
+    "details": {
+      "scentNotes": "Toasted vanilla, cardamom, smoked oud, cedar",
+      "wearTime": "8–10 hours",
+      "volume": "50 ml",
+      "concentration": "Eau de parfum"
+    },
+    "inStock": true
+  },
+  {
+    "id": "perf-05",
+    "name": "Jasmine Bloom EDP",
+    "brand": "Glow Lab",
+    "category": "Perfumes & Fragrances",
+    "price": 10500,
+    "oldPrice": 12500,
+    "discount": "-16%",
+    "rating": 4.7,
+    "reviewsCount": 188,
+    "tag": "CLEAN BEAUTY",
+    "tagColor": "bg-emerald-600",
+    "images": [
+      "https://images.unsplash.com/photo-1594035910387-fea47794261f?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "Fresh jasmine petals meet sparkling pear in a bright, feminine floral that feels effortless on the skin. A gentle base of white musk keeps the composition airy, polished, and easy to wear.",
+    "details": {
+      "scentNotes": "Pear, jasmine sambac, orange blossom, white musk",
+      "wearTime": "6–8 hours",
+      "volume": "50 ml",
+      "concentration": "Eau de parfum"
+    },
+    "inStock": true
+  },
+  {
+    "id": "perf-06",
+    "name": "Amber & Cashmere Oil",
+    "brand": "Maison Muse",
+    "category": "Perfumes & Fragrances",
+    "price": 4800,
+    "oldPrice": 6000,
+    "discount": "-20%",
+    "rating": 4.6,
+    "reviewsCount": 123,
+    "tag": "HOT DEAL",
+    "tagColor": "bg-[#e61601]",
+    "images": [
+      "https://images.unsplash.com/photo-1592945403244-b3fbafd7f539?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "A concentrated roll-on oil melts into the skin with golden amber and a whisper of cashmere woods. Its travel-friendly size makes a soft, personal scent ritual easy to take anywhere.",
+    "details": {
+      "scentNotes": "Golden amber, cashmere woods, soft vanilla",
+      "wearTime": "5–7 hours",
+      "volume": "10 ml",
+      "concentration": "Perfume oil"
+    },
+    "inStock": true
+  },
+  {
+    "id": "nail-01",
+    "name": "Rosewater Glaze Almond",
+    "brand": "Maison Muse",
+    "category": "Press-On Nails",
+    "price": 1800,
+    "oldPrice": 2400,
+    "discount": "-25%",
+    "rating": 4.9,
+    "reviewsCount": 327,
+    "tag": "BEST SELLER",
+    "tagColor": "bg-rose-600",
+    "images": [
+      "https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1610992015732-2449b76344bc?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "A translucent rosewater wash gives this almond-shaped set the polished look of a fresh salon manicure. Flexible, reusable tips and a complete prep kit make application feel beautifully simple.",
+    "details": {
+      "shape": "Almond",
+      "finish": "Sheer rosewater glaze",
+      "wearTime": "Up to 14 days with proper prep",
+      "availableSizes": ["XS", "S", "M", "L"]
+    },
+    "inStock": true
+  },
+  {
+    "id": "nail-02",
+    "name": "French Velvet Micro-Tip Coffin",
+    "brand": "Maison Muse",
+    "category": "Press-On Nails",
+    "price": 2200,
+    "oldPrice": 3000,
+    "discount": "-27%",
+    "rating": 4.8,
+    "reviewsCount": 211,
+    "tag": "TRENDING",
+    "tagColor": "bg-purple-600",
+    "images": [
+      "https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "A fine, modern French tip brings a little quiet luxury to a softly tapered coffin silhouette. The comfortable fit and salon-inspired finish make this set an easy choice for workdays and weekends.",
+    "details": {
+      "shape": "Short coffin",
+      "finish": "Velvet nude with micro-French tip",
+      "wearTime": "Up to 14 days with proper prep",
+      "availableSizes": ["XS", "S", "M", "L"]
+    },
+    "inStock": true
+  },
+  {
+    "id": "nail-03",
+    "name": "Milky White Swirl Square",
+    "brand": "Glow Lab",
+    "category": "Press-On Nails",
+    "price": 1900,
+    "oldPrice": 2500,
+    "discount": "-24%",
+    "rating": 4.7,
+    "reviewsCount": 159,
+    "tag": "VIRAL PICK",
+    "tagColor": "bg-purple-600",
+    "images": [
+      "https://images.unsplash.com/photo-1610992015732-2449b76344bc?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "Milky white polish and delicate hand-finished swirls make this square set feel like a tiny piece of wearable art. Each reusable tip is designed for a smooth fit and a glossy, camera-ready finish.",
+    "details": {
+      "shape": "Short square",
+      "finish": "Milky white with soft swirl accents",
+      "wearTime": "Up to 14 days with proper prep",
+      "availableSizes": ["XS", "S", "M", "L"]
+    },
+    "inStock": true
+  },
+  {
+    "id": "nail-04",
+    "name": "Cherry Red Stiletto",
+    "brand": "Maison Muse",
+    "category": "Press-On Nails",
+    "price": 2100,
+    "oldPrice": 2800,
+    "discount": "-25%",
+    "rating": 4.8,
+    "reviewsCount": 294,
+    "tag": "HOT DEAL",
+    "tagColor": "bg-[#e61601]",
+    "images": [
+      "https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1610992015732-2449b76344bc?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "A saturated cherry-red gloss adds instant confidence to this striking stiletto shape. The lightweight reusable set arrives ready for your next night out, celebration, or just-because moment.",
+    "details": {
+      "shape": "Stiletto",
+      "finish": "High-shine cherry red",
+      "wearTime": "Up to 14 days with proper prep",
+      "availableSizes": ["XS", "S", "M", "L"]
+    },
+    "inStock": true
+  },
+  {
+    "id": "nail-05",
+    "name": "Chrome Aura Short Oval",
+    "brand": "Glow Lab",
+    "category": "Press-On Nails",
+    "price": 2300,
+    "oldPrice": 3000,
+    "discount": "-23%",
+    "rating": 4.6,
+    "reviewsCount": 88,
+    "tag": "VIRAL PICK",
+    "tagColor": "bg-purple-600",
+    "images": [
+      "https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1610992015732-2449b76344bc?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "A pearly chrome sheen shifts softly in the light for a fresh, luminous manicure with a subtle statement. The short oval profile feels comfortable and practical while still looking special.",
+    "details": {
+      "shape": "Short oval",
+      "finish": "Iridescent chrome aura",
+      "wearTime": "Up to 14 days with proper prep",
+      "availableSizes": ["XS", "S", "M", "L"]
+    },
+    "inStock": true
+  },
+  {
+    "id": "nail-06",
+    "name": "Bare Nude Square",
+    "brand": "Maison Muse",
+    "category": "Press-On Nails",
+    "price": 1700,
+    "oldPrice": 2200,
+    "discount": "-23%",
+    "rating": 4.5,
+    "reviewsCount": 72,
+    "tag": "EVERYDAY PICK",
+    "tagColor": "bg-amber-500",
+    "images": [
+      "https://images.unsplash.com/photo-1610992015732-2449b76344bc?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "A sheer, softly warm nude gives your nails a naturally neat look with barely-there effort. The timeless square shape pairs with everything and is easy to rewear.",
+    "details": {
+      "shape": "Short square",
+      "finish": "Bare nude sheer",
+      "wearTime": "Up to 14 days with proper prep",
+      "availableSizes": ["XS", "S", "M", "L"]
+    },
+    "inStock": true
+  },
+  {
+    "id": "skin-01",
+    "name": "Dew Drop Vitamin C Serum",
+    "brand": "Glow Lab",
+    "category": "Skincare & Glow",
+    "price": 5400,
+    "oldPrice": 6800,
+    "discount": "-21%",
+    "rating": 4.8,
+    "reviewsCount": 418,
+    "tag": "BEST SELLER",
+    "tagColor": "bg-rose-600",
+    "images": [
+      "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "This lightweight vitamin C serum layers easily into your morning routine for a fresh, radiant-looking complexion. Hyaluronic acid helps skin feel comfortably hydrated without a heavy finish.",
+    "details": {
+      "keyIngredients": "Vitamin C, hyaluronic acid, vitamin E",
+      "volume": "30 ml",
+      "skinType": "Most skin types",
+      "howToUse": "Apply 2–3 drops to clean skin in the morning"
+    },
+    "inStock": true
+  },
+  {
+    "id": "skin-02",
+    "name": "Cloud Nine Barrier Cream",
+    "brand": "Maison Muse",
+    "category": "Skincare & Glow",
+    "price": 6900,
+    "oldPrice": 8500,
+    "discount": "-19%",
+    "rating": 4.9,
+    "reviewsCount": 362,
+    "tag": "CLEAN BEAUTY",
+    "tagColor": "bg-emerald-600",
+    "images": [
+      "https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "A cushiony, fragrance-free cream comforts dry-feeling skin with a silky, never-greasy finish. Ceramides and squalane help support the look and feel of a healthy skin barrier.",
+    "details": {
+      "keyIngredients": "Ceramides, squalane, panthenol",
+      "volume": "50 ml",
+      "skinType": "Dry, sensitive, or combination skin",
+      "howToUse": "Smooth over face and neck after serum"
+    },
+    "inStock": true
+  },
+  {
+    "id": "skin-03",
+    "name": "Squalane Hydrating Cleanser",
+    "brand": "Glow Lab",
+    "category": "Skincare & Glow",
+    "price": 3800,
+    "oldPrice": 4800,
+    "discount": "-21%",
+    "rating": 4.7,
+    "reviewsCount": 206,
+    "tag": "DAILY ESSENTIAL",
+    "tagColor": "bg-amber-500",
+    "images": [
+      "https://images.unsplash.com/photo-1556229010-6c3f2c9ca5f8?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "A gentle gel-to-milk cleanser lifts daily buildup while leaving skin feeling soft and comfortable. Squalane and glycerin help maintain a hydrated feel through your first and second cleanse.",
+    "details": {
+      "keyIngredients": "Squalane, glycerin, oat extract",
+      "volume": "150 ml",
+      "skinType": "All skin types",
+      "howToUse": "Massage onto damp skin and rinse thoroughly"
+    },
+    "inStock": true
+  },
+  {
+    "id": "skin-04",
+    "name": "Rosehip Overnight Facial Oil",
+    "brand": "Glow Lab",
+    "category": "Skincare & Glow",
+    "price": 7200,
+    "oldPrice": 9000,
+    "discount": "-20%",
+    "rating": 4.8,
+    "reviewsCount": 174,
+    "tag": "GLOW GETTER",
+    "tagColor": "bg-rose-600",
+    "images": [
+      "https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1556229010-6c3f2c9ca5f8?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "A few drops of silky rosehip oil make an evening routine feel like a restorative little ritual. The lightweight blend leaves skin with a soft-looking glow by morning without a sticky feel.",
+    "details": {
+      "keyIngredients": "Rosehip seed oil, jojoba, vitamin E",
+      "volume": "30 ml",
+      "skinType": "Normal, dry, or mature skin",
+      "howToUse": "Press 2–3 drops into moisturized skin at night"
+    },
+    "inStock": true
+  },
+  {
+    "id": "skin-05",
+    "name": "Niacinamide Pore Refining Gel",
+    "brand": "Act+Acre",
+    "category": "Skincare & Glow",
+    "price": 4900,
+    "oldPrice": 6200,
+    "discount": "-21%",
+    "rating": 4.6,
+    "reviewsCount": 102,
+    "tag": "CLEAN BEAUTY",
+    "tagColor": "bg-emerald-600",
+    "images": [
+      "https://images.unsplash.com/photo-1620916566398-39f1143ab7be?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1608248543803-ba4f8c70ae0b?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "A fresh, quick-absorbing gel brings a weightless layer of hydration to your daily skin routine. Niacinamide and zinc help skin look balanced and smooth with consistent use.",
+    "details": {
+      "keyIngredients": "Niacinamide, zinc PCA, hyaluronic acid",
+      "volume": "30 ml",
+      "skinType": "Combination or oily skin",
+      "howToUse": "Apply a thin layer after cleansing"
+    },
+    "inStock": true
+  },
+  {
+    "id": "makeup-01",
+    "name": "Glassy Lip Oil Cherry Glaze",
+    "brand": "Maison Muse",
+    "category": "Lip & Makeup Essentials",
+    "price": 2800,
+    "oldPrice": 3500,
+    "discount": "-20%",
+    "rating": 4.9,
+    "reviewsCount": 522,
+    "tag": "VIRAL PICK",
+    "tagColor": "bg-purple-600",
+    "images": [
+      "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "A sheer cherry tint wraps lips in a glassy cushion of comfortable, non-sticky shine. Swipe it on alone for an easy flush or layer over your favorite lip color.",
+    "details": {
+      "finish": "High-shine sheer tint",
+      "shade": "Cherry Glaze",
+      "volume": "5 ml",
+      "keyIngredients": "Jojoba oil, vitamin E, squalane"
+    },
+    "inStock": true
+  },
+  {
+    "id": "makeup-02",
+    "name": "Velvet Matte Lip Tint Nude",
+    "brand": "Glow Lab",
+    "category": "Lip & Makeup Essentials",
+    "price": 3000,
+    "oldPrice": 4000,
+    "discount": "-25%",
+    "rating": 4.7,
+    "reviewsCount": 248,
+    "tag": "BEST SELLER",
+    "tagColor": "bg-rose-600",
+    "images": [
+      "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1586495777744-4413f21062fa?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "A featherlight tint glides on smoothly and settles into a soft velvet finish that feels comfortable all day. The flattering nude shade is easy to wear on its own or paired with a liner.",
+    "details": {
+      "finish": "Soft velvet matte",
+      "shade": "Nude Rose",
+      "wearTime": "Up to 6 hours",
+      "volume": "4 ml"
+    },
+    "inStock": true
+  },
+  {
+    "id": "makeup-03",
+    "name": "Liquid Blush Flush",
+    "brand": "Maison Muse",
+    "category": "Lip & Makeup Essentials",
+    "price": 3500,
+    "oldPrice": 4500,
+    "discount": "-22%",
+    "rating": 4.8,
+    "reviewsCount": 193,
+    "tag": "TRENDING",
+    "tagColor": "bg-amber-500",
+    "images": [
+      "https://images.unsplash.com/photo-1611930022073-b7a4ba5fcccd?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "This blendable liquid blush melts into skin with a fresh, dewy flush that looks like it came from within. A little goes a long way, making it effortless to build from a soft tint to a brighter pop.",
+    "details": {
+      "finish": "Natural dewy",
+      "shade": "Warm Rose",
+      "volume": "8 ml",
+      "howToUse": "Tap a small amount onto cheeks and blend"
+    },
+    "inStock": true
+  },
+  {
+    "id": "makeup-04",
+    "name": "Tinted Brow Freeze Balm",
+    "brand": "Glow Lab",
+    "category": "Lip & Makeup Essentials",
+    "price": 3200,
+    "oldPrice": 4000,
+    "discount": "-20%",
+    "rating": 4.6,
+    "reviewsCount": 91,
+    "tag": "EVERYDAY PICK",
+    "tagColor": "bg-amber-500",
+    "images": [
+      "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1611930022073-b7a4ba5fcccd?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "A softly tinted styling balm shapes brows into a polished, lifted look without feeling stiff or flaky. The compact format and easy brush make quick touch-ups simple wherever the day takes you.",
+    "details": {
+      "finish": "Flexible natural hold",
+      "shade": "Soft Brown",
+      "volume": "6 g",
+      "wearTime": "All-day hold"
+    },
+    "inStock": true
+  },
+  {
+    "id": "accessory-01",
+    "name": "Mulberry Silk Scrunchie Trio",
+    "brand": "Maison Muse",
+    "category": "Hair & Accessories",
+    "price": 2600,
+    "oldPrice": 3500,
+    "discount": "-26%",
+    "rating": 4.8,
+    "reviewsCount": 304,
+    "tag": "BEST SELLER",
+    "tagColor": "bg-rose-600",
+    "images": [
+      "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "Three smooth mulberry silk scrunchies in soft, versatile shades bring a polished finish to everyday hair. Their gentle hold helps reduce tugging while looking lovely on your wrist between wears.",
+    "details": {
+      "material": "Mulberry silk",
+      "setIncludes": "3 scrunchies",
+      "care": "Hand wash gently and air dry",
+      "color": "Blush, champagne, rosewood"
+    },
+    "inStock": true
+  },
+  {
+    "id": "accessory-02",
+    "name": "Rose Quartz Gua Sha",
+    "brand": "Glow Lab",
+    "category": "Hair & Accessories",
+    "price": 4500,
+    "oldPrice": 6000,
+    "discount": "-25%",
+    "rating": 4.7,
+    "reviewsCount": 187,
+    "tag": "SELF-CARE FAVORITE",
+    "tagColor": "bg-purple-600",
+    "images": [
+      "https://images.unsplash.com/photo-1601049541289-9b1b7bbbfe19?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1556229010-6c3f2c9ca5f8?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "A naturally cool rose quartz tool turns a few quiet minutes into a soothing facial massage ritual. Its sculpted edges glide comfortably over serum or facial oil for a spa-like moment at home.",
+    "details": {
+      "material": "Natural rose quartz",
+      "setIncludes": "1 gua sha tool and storage pouch",
+      "care": "Wipe clean after each use",
+      "use": "Use gentle upward strokes on moisturized skin"
+    },
+    "inStock": true
+  },
+  {
+    "id": "accessory-03",
+    "name": "Heatless Silk Curling Rod Set",
+    "brand": "Maison Muse",
+    "category": "Hair & Accessories",
+    "price": 3900,
+    "oldPrice": 5000,
+    "discount": "-22%",
+    "rating": 4.6,
+    "reviewsCount": 143,
+    "tag": "VIRAL PICK",
+    "tagColor": "bg-purple-600",
+    "images": [
+      "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "Wake up to soft, bouncy waves with a comfortable no-heat styling set wrapped in a smooth silk-touch fabric. The easy overnight routine helps you create a put-together look without reaching for hot tools.",
+    "details": {
+      "material": "Silk-touch satin",
+      "setIncludes": "Curling rod, 2 scrunchies, claw clip",
+      "hairLength": "Suitable for medium to long hair",
+      "howToUse": "Wrap slightly damp hair and leave to set"
+    },
+    "inStock": true
+  },
+  {
+    "id": "accessory-04",
+    "name": "Acetate Claw Clips",
+    "brand": "Glow Lab",
+    "category": "Hair & Accessories",
+    "price": 2400,
+    "oldPrice": 3200,
+    "discount": "-25%",
+    "rating": 4.5,
+    "reviewsCount": 76,
+    "tag": "HOT DEAL",
+    "tagColor": "bg-[#e61601]",
+    "images": [
+      "https://images.unsplash.com/photo-1596462502278-27bfdc403348?auto=format&fit=crop&w=1200&q=90",
+      "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?auto=format&fit=crop&w=1200&q=90"
+    ],
+    "description": "A pair of glossy acetate clips holds hair comfortably while adding an easy finishing touch to your look. The neutral tones work from quick errands to dinner plans and travel days.",
+    "details": {
+      "material": "Polished cellulose acetate",
+      "setIncludes": "2 claw clips",
+      "size": "Medium hold",
+      "color": "Tortoiseshell and blush"
+    },
+    "inStock": true
+  }
+]

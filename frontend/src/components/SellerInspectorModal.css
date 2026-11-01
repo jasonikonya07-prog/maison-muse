@@ -1,0 +1,349 @@
+.seller-inspector-shell.overlay {
+  position: fixed;
+  z-index: 1300;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgb(26 21 19 / 55%);
+}
+
+.seller-inspector-shell.embedded {
+  width: min(100%, 820px);
+  margin: 0 auto;
+}
+
+.seller-inspector-dialog {
+  display: grid;
+  gap: 18px;
+  width: min(100%, 820px);
+  max-height: 92vh;
+  overflow: auto;
+  padding: 24px;
+  border: 1px solid #eee6e2;
+  border-radius: 17px;
+  background: #fff;
+  color: #382f2b;
+  box-shadow: 0 22px 75px rgb(0 0 0 / 22%);
+}
+
+.seller-inspector-shell.embedded .seller-inspector-dialog {
+  max-height: none;
+  box-shadow: 0 14px 40px rgb(83 55 54 / 8%);
+}
+
+.seller-inspector-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.seller-inspector-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #a44867;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .11em;
+}
+
+.seller-inspector-header h2 {
+  margin: 7px 0 5px;
+  font-family: Georgia, serif;
+  font-size: 25px;
+  font-weight: 500;
+}
+
+.seller-inspector-header p {
+  margin: 0;
+  color: #81756f;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.seller-inspector-close {
+  display: grid;
+  width: 35px;
+  height: 35px;
+  flex: 0 0 35px;
+  place-items: center;
+  border: 1px solid #e6ddda;
+  border-radius: 50%;
+  background: #fff;
+  color: #605651;
+  cursor: pointer;
+}
+
+.seller-inspector-search {
+  display: grid;
+  gap: 7px;
+  color: #716660;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.seller-inspector-search input {
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid #e1d8d4;
+  border-radius: 8px;
+  background: #fff;
+  color: #352c29;
+  font: inherit;
+  font-size: 13px;
+}
+
+.seller-inspector-search small {
+  color: #8d817a;
+  font-weight: 400;
+}
+
+.seller-inspector-error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fff0ef;
+  color: #9c3935;
+  font-size: 12px;
+}
+
+.seller-inspector-empty,
+.seller-inspector-no-reviews {
+  margin: 0;
+  color: #81756f;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.seller-inspector-dossier {
+  display: grid;
+  gap: 17px;
+}
+
+.seller-inspector-store {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 15px;
+  border: 1px solid #eee6e2;
+  border-radius: 11px;
+  background: #fdfaf9;
+}
+
+.seller-inspector-shield {
+  display: grid;
+  width: 43px;
+  height: 43px;
+  flex: 0 0 43px;
+  place-items: center;
+  border-radius: 12px;
+}
+
+.seller-inspector-shield.verified {
+  background: #eaf5ee;
+  color: #3d835b;
+}
+
+.seller-inspector-shield.unverified {
+  background: #fff0ef;
+  color: #aa4842;
+}
+
+.seller-inspector-store-title {
+  display: grid;
+  gap: 3px;
+}
+
+.seller-inspector-store-title > span {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .07em;
+}
+
+.seller-inspector-store-title .verified-text {
+  color: #3d835b;
+}
+
+.seller-inspector-store-title .unverified-text {
+  color: #a34942;
+}
+
+.seller-inspector-store-title h3 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.seller-inspector-store-title small {
+  color: #857972;
+  font-size: 10px;
+}
+
+.seller-inspector-facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.seller-inspector-facts article {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #f0eae7;
+  border-radius: 9px;
+  color: #a44867;
+}
+
+.seller-inspector-facts article span {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.seller-inspector-facts small {
+  color: #8a7f79;
+  font-size: 10px;
+}
+
+.seller-inspector-facts strong,
+.seller-inspector-facts a {
+  overflow-wrap: anywhere;
+  color: #413834;
+  font-size: 11px;
+  text-decoration: none;
+}
+
+.seller-inspector-trust,
+.seller-inspector-reviews {
+  padding: 15px;
+  border: 1px solid #eee6e2;
+  border-radius: 11px;
+}
+
+.seller-inspector-trust > header,
+.seller-inspector-reviews > header,
+.seller-inspector-reviews article > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.seller-inspector-trust > header > div,
+.seller-inspector-reviews > header > div {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #a44867;
+}
+
+.seller-inspector-trust h3,
+.seller-inspector-reviews h3 {
+  margin: 0;
+  color: #3c332f;
+  font-size: 13px;
+}
+
+.seller-inspector-trust header > strong,
+.seller-inspector-reviews header > strong {
+  color: #3d7655;
+  font-size: 11px;
+}
+
+.seller-inspector-reviews header > strong {
+  color: #705030;
+}
+
+.seller-inspector-reviews header > strong small {
+  color: #8c817b;
+  font-weight: 500;
+}
+
+.seller-inspector-trust-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1.5fr;
+  gap: 13px;
+  margin-top: 15px;
+  padding-top: 13px;
+  border-top: 1px solid #f0eae7;
+}
+
+.seller-inspector-trust-grid span {
+  display: grid;
+  align-content: start;
+  gap: 5px;
+}
+
+.seller-inspector-trust-grid small {
+  color: #8a7f79;
+  font-size: 9px;
+}
+
+.seller-inspector-trust-grid strong {
+  color: #423a35;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.seller-inspector-trust-grid span:last-child strong {
+  font-size: 10px;
+}
+
+.seller-inspector-review-list {
+  display: grid;
+  gap: 0;
+  margin-top: 12px;
+}
+
+.seller-inspector-review-list article {
+  padding: 12px 0;
+  border-top: 1px solid #f0eae7;
+}
+
+.seller-inspector-review-list article > div strong {
+  color: #453b36;
+  font-size: 11px;
+}
+
+.seller-inspector-review-list article > div span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #a77a31;
+  font-size: 10px;
+}
+
+.seller-inspector-review-list p {
+  margin: 8px 0;
+  color: #675c56;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.seller-inspector-review-list article > small {
+  color: #938780;
+  font-size: 9px;
+}
+
+.seller-inspector-no-reviews {
+  margin-top: 12px;
+}
+
+@media (max-width: 600px) {
+  .seller-inspector-dialog {
+    padding: 18px;
+  }
+
+  .seller-inspector-facts,
+  .seller-inspector-trust-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .seller-inspector-trust > header,
+  .seller-inspector-reviews > header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

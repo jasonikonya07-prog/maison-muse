@@ -1,0 +1,620 @@
+.buyer-tracking-page {
+  min-height: 100vh;
+  padding-bottom: 60px;
+  background:
+    radial-gradient(circle at 85% 0%, rgb(245 225 230 / 70%), transparent 34rem),
+    #fbf8f6;
+  color: #332b28;
+}
+
+.buyer-tracking-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 22px 24px;
+}
+
+.buyer-tracking-brand {
+  color: #332b28;
+  font-family: Georgia, serif;
+  font-size: 24px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.buyer-tracking-brand span {
+  color: #a44867;
+  font-weight: 400;
+}
+
+.buyer-tracking-brand i {
+  color: #a44867;
+  font-style: normal;
+}
+
+.buyer-tracking-home {
+  color: #6f625c;
+  font-size: 12px;
+  text-decoration: none;
+}
+
+.buyer-tracking-home:hover {
+  color: #a44867;
+}
+
+.buyer-order-history {
+  max-width: 920px;
+  margin: 0 auto 44px;
+  padding: 0 24px;
+}
+
+.buyer-order-history-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.buyer-order-history-heading h2 {
+  margin: 5px 0 0;
+  font-family: Georgia, serif;
+  font-size: 27px;
+  font-weight: 500;
+}
+
+.buyer-order-history-heading button {
+  padding: 8px 12px;
+  border: 1px solid #e5dad7;
+  border-radius: 7px;
+  background: #fff;
+  color: #604d49;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+
+.buyer-order-history-heading button:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+
+.buyer-order-history-list {
+  display: grid;
+  gap: 10px;
+}
+
+.buyer-order-history-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 18px;
+  padding: 16px;
+  border: 1px solid #eadfdb;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgb(87 57 54 / 5%);
+}
+
+.buyer-order-history-card > div {
+  display: grid;
+  gap: 5px;
+}
+
+.buyer-order-history-card > div:first-child strong {
+  overflow-wrap: anywhere;
+}
+
+.buyer-order-history-card > div span {
+  color: #81736e;
+  font-size: 11px;
+}
+
+.buyer-order-history-card > div:nth-child(2) {
+  text-align: right;
+}
+
+.buyer-order-history-card > a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #8d4258;
+  font-size: 12px;
+  font-weight: 650;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.buyer-order-history-card > a:hover {
+  color: #633044;
+}
+
+.buyer-order-history-empty {
+  margin: 0;
+  padding: 18px;
+  border: 1px dashed #dfd1cc;
+  border-radius: 10px;
+  background: rgb(255 255 255 / 68%);
+  color: #766b66;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.buyer-tracking-hero {
+  max-width: 760px;
+  margin: 48px auto 34px;
+  padding: 0 24px;
+  text-align: center;
+}
+
+.buyer-tracking-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #9a5167;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .12em;
+}
+
+.buyer-tracking-hero h1 {
+  margin: 13px 0 9px;
+  font-family: Georgia, serif;
+  font-size: clamp(36px, 6vw, 55px);
+  font-weight: 500;
+  letter-spacing: -.04em;
+}
+
+.buyer-tracking-hero h1 em {
+  color: #a44867;
+  font-weight: 400;
+}
+
+.buyer-tracking-hero > p {
+  margin: 0 auto;
+  color: #766b66;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.buyer-tracking-search {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin: 25px auto 0;
+  padding: 7px 8px 7px 14px;
+  border: 1px solid #e5dad7;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 12px 30px rgb(87 57 54 / 8%);
+  color: #988b85;
+}
+
+.buyer-tracking-search input {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  border: 0;
+  outline: 0;
+  color: #392f2c;
+  font: inherit;
+  font-size: 13px;
+}
+
+.buyer-tracking-search button {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 15px;
+  border: 0;
+  border-radius: 8px;
+  background: #3c2b2d;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.buyer-tracking-search button:disabled {
+  opacity: .7;
+}
+
+.buyer-tracking-error {
+  margin: 12px 0 0 !important;
+  color: #a9433e !important;
+  font-size: 12px !important;
+}
+
+.buyer-tracking-results {
+  display: grid;
+  gap: 18px;
+  width: min(100% - 40px, 900px);
+  margin: 0 auto;
+}
+
+.buyer-tracking-order-summary,
+.buyer-package-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.buyer-tracking-order-summary {
+  padding: 21px 23px;
+  border: 1px solid #eee6e2;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.buyer-tracking-order-summary h2 {
+  margin: 6px 0;
+  font-size: 21px;
+}
+
+.buyer-tracking-order-summary p {
+  margin: 0;
+  color: #827771;
+  font-size: 11px;
+}
+
+.buyer-payment-badge,
+.buyer-current-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #f0f3ed;
+  color: #527253;
+  font-size: 10px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.buyer-payment-badge.pending {
+  background: #fff4df;
+  color: #94620f;
+}
+
+.buyer-tracking-package,
+.buyer-receipt,
+.buyer-tracking-empty {
+  padding: 22px;
+  border: 1px solid #eee6e2;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.buyer-package-header {
+  align-items: center;
+}
+
+.buyer-package-header h3 {
+  margin: 5px 0 0;
+  font-size: 16px;
+}
+
+.buyer-current-status {
+  background: #f0efed;
+  color: #655b56;
+  text-transform: capitalize;
+}
+
+.buyer-current-status.dispatched_to_courier,
+.buyer-current-status.out_for_delivery {
+  background: #eaf1fb;
+  color: #3d6c9a;
+}
+
+.buyer-current-status.delivered {
+  background: #eaf5ee;
+  color: #3a7457;
+}
+
+.buyer-current-status.cancelled {
+  background: #fff0ef;
+  color: #a6413e;
+}
+
+.buyer-order-steps {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0;
+  margin: 30px 0 24px;
+  padding: 0;
+  list-style: none;
+}
+
+.buyer-order-steps li {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 9px;
+  text-align: center;
+}
+
+.buyer-order-steps li:not(:last-child)::after {
+  position: absolute;
+  top: 15px;
+  left: calc(50% + 17px);
+  width: calc(100% - 34px);
+  height: 1px;
+  background: #e6ddda;
+  content: "";
+}
+
+.buyer-order-steps li.completed:not(:last-child)::after {
+  background: #a44867;
+}
+
+.buyer-step-marker {
+  z-index: 1;
+  display: grid;
+  width: 31px;
+  height: 31px;
+  place-items: center;
+  border: 1px solid #e3d9d5;
+  border-radius: 50%;
+  background: #fff;
+  color: #998a83;
+}
+
+.buyer-order-steps li.completed .buyer-step-marker {
+  border-color: #a44867;
+  background: #a44867;
+  color: #fff;
+}
+
+.buyer-order-steps li > div {
+  display: grid;
+  gap: 5px;
+  max-width: 140px;
+}
+
+.buyer-order-steps strong {
+  color: #514742;
+  font-size: 11px;
+}
+
+.buyer-order-steps li.completed strong {
+  color: #3d332f;
+}
+
+.buyer-order-steps small,
+.buyer-order-steps time {
+  color: #938780;
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.buyer-courier-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0 19px;
+  padding: 12px 14px;
+  border-radius: 9px;
+  background: #f8f5f3;
+  color: #9a5167;
+}
+
+.buyer-courier-card div {
+  display: grid;
+  gap: 3px;
+}
+
+.buyer-courier-card small {
+  color: #837770;
+  font-size: 10px;
+}
+
+.buyer-courier-card strong,
+.buyer-courier-card span {
+  color: #413834;
+  font-size: 12px;
+}
+
+.buyer-courier-card span {
+  color: #7d726c;
+  font-size: 10px;
+}
+
+.buyer-package-items {
+  display: grid;
+  gap: 9px;
+  padding-top: 13px;
+  border-top: 1px solid #eee8e5;
+}
+
+.buyer-package-items div,
+.buyer-receipt > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: #605651;
+  font-size: 12px;
+}
+
+.buyer-package-items strong,
+.buyer-receipt > div strong {
+  color: #3b332f;
+  white-space: nowrap;
+}
+
+.buyer-receipt header {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+  padding-bottom: 13px;
+  border-bottom: 1px solid #eee8e5;
+}
+
+.buyer-receipt header div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #a44867;
+}
+
+.buyer-receipt h3 {
+  margin: 0;
+  color: #392f2c;
+  font-size: 14px;
+}
+
+.buyer-receipt header > strong {
+  color: #392f2c;
+  font-size: 15px;
+}
+
+.buyer-receipt > div {
+  margin: 10px 0;
+}
+
+.buyer-receipt .buyer-receipt-total {
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px solid #eee8e5;
+  color: #392f2c;
+  font-weight: 750;
+}
+
+.buyer-receipt-total strong {
+  font-size: 15px;
+}
+
+.buyer-receipt p {
+  margin: 15px 0 0;
+  color: #786e68;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.buyer-receipt p strong {
+  margin-right: 5px;
+  color: #453b36;
+}
+
+.buyer-support-button {
+  display: inline-flex;
+  align-items: center;
+  justify-self: center;
+  gap: 8px;
+  padding: 11px 16px;
+  border: 1px solid #d9c8c4;
+  border-radius: 9px;
+  background: #fff;
+  color: #8d3f5b;
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.buyer-tracking-cancelled {
+  margin: 20px 0 0;
+  color: #a6413e;
+  font-size: 12px;
+}
+
+.buyer-tracking-empty {
+  width: min(100% - 40px, 560px);
+  margin: 0 auto;
+  color: #a44867;
+  text-align: center;
+}
+
+.buyer-tracking-empty h2 {
+  margin: 7px 0;
+  color: #3f3531;
+  font-family: Georgia, serif;
+}
+
+.buyer-tracking-empty p {
+  margin: 0;
+  color: #827771;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+@media (max-width: 700px) {
+  .buyer-order-history {
+    padding: 0 18px;
+  }
+
+  .buyer-order-history-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 10px 12px;
+  }
+
+  .buyer-order-history-card > a {
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+
+  .buyer-tracking-header {
+    padding: 17px 18px;
+  }
+
+  .buyer-tracking-hero {
+    margin: 28px auto;
+    padding: 0 18px;
+  }
+
+  .buyer-tracking-search {
+    flex-wrap: wrap;
+    padding: 8px 10px;
+  }
+
+  .buyer-tracking-search input {
+    width: calc(100% - 40px);
+  }
+
+  .buyer-tracking-search button {
+    width: 100%;
+  }
+
+  .buyer-tracking-results {
+    width: calc(100% - 24px);
+  }
+
+  .buyer-tracking-order-summary,
+  .buyer-package-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .buyer-order-steps {
+    grid-template-columns: 1fr;
+    gap: 0;
+    margin: 18px 0;
+  }
+
+  .buyer-order-steps li {
+    grid-template-columns: 31px 1fr;
+    justify-items: start;
+    gap: 10px;
+    min-height: 62px;
+    text-align: left;
+  }
+
+  .buyer-order-steps li:not(:last-child)::after {
+    top: 31px;
+    left: 15px;
+    width: 1px;
+    height: calc(100% - 30px);
+  }
+
+  .buyer-order-steps li > div {
+    max-width: none;
+    padding-top: 4px;
+  }
+}
