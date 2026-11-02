@@ -3310,6 +3310,59 @@ class StoreApiTests(unittest.TestCase):
                 bot_count + 1,
             )
 
+    def test_support_bot_handles_order_actions_and_redacts_sensitive_chat_content(self) -> None:
+        from fastapi.testclient import TestClient
+
+        with TestClient(create_app()) as guest_client:
+            cancelled = guest_client.post(
+                "/api/support/message",
+                json={
+                    "message": "MM-DEMO-95A1E6C333A5FA77 I want cancel my order",
+                },
+            )
+            self.assertEqual(cancelled.status_code, 200, cancelled.text)
+            self.assertEqual(cancelled.json()["status"], "WAITING_AGENT")
+            self.assertIn(
+                "can’t cancel or change",
+                cancelled.json()["bot_reply"]["message"],
+            )
+
+            refund = guest_client.post(
+                "/api/support/message",
+                json={"message": "I want a refund for my order"},
+            )
+            self.assertEqual(refund.status_code, 200, refund.text)
+            self.assertEqual(refund.json()["status"], "WAITING_AGENT")
+            self.assertIn(
+                "can’t approve or issue",
+                refund.json()["bot_reply"]["message"],
+            )
+
+            secret = "My password is hunter2 and my OTP is 123456"
+            privacy = guest_client.post(
+                "/api/support/message",
+                json={"message": secret},
+            )
+            self.assertEqual(privacy.status_code, 200, privacy.text)
+            self.assertIn("passwords", privacy.json()["bot_reply"]["message"])
+            self.assertIn(
+                "[Message hidden for safety",
+                privacy.json()["messages"][-2]["message"],
+            )
+            self.assertNotIn(secret, privacy.text)
+
+            contact = "+254712345678"
+            redacted = guest_client.post(
+                "/api/support/message",
+                json={"message": f"My phone number is {contact}; M-Pesa checkout failed."},
+            )
+            self.assertEqual(redacted.status_code, 200, redacted.text)
+            self.assertNotIn(contact, redacted.text)
+            self.assertIn(
+                "[contact details removed]",
+                redacted.json()["messages"][-2]["message"],
+            )
+
     def test_customer_support_handoff_admin_reply_and_websocket_delivery(self) -> None:
         from fastapi.testclient import TestClient
 

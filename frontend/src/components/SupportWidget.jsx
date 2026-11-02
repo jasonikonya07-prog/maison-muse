@@ -11,6 +11,8 @@ import "./SupportWidget.css";
 const SESSION_KEY = "mm-support-session";
 const QUICK_ACTIONS = [
   { intent: "order_status", label: "Where is my order?" },
+  { intent: "order_cancel", label: "Cancel or change an order" },
+  { intent: "refund_return", label: "Returns and refunds" },
   { intent: "seller_signup", label: "How do I sell on Maison Muse?" },
   { intent: "mpesa_help", label: "M-Pesa payment issue" },
   { intent: "human", label: "Talk to a Live Support Agent" },
@@ -37,16 +39,6 @@ function readSupportSession() {
   } catch (error) {
     console.error("Unable to read the saved support conversation.", error);
     return { ticketId: "", token: "", unread: 0 };
-  }
-}
-
-function readLocalJson(key, fallback) {
-  try {
-    const saved = window.localStorage.getItem(key);
-    return saved ? JSON.parse(saved) : fallback;
-  } catch (error) {
-    console.error(`Unable to read ${key} for support context.`, error);
-    return fallback;
   }
 }
 
@@ -177,24 +169,11 @@ function SupportWidget() {
     setBusy(true);
     setError("");
     try {
-      const cart = readLocalJson("mm-cart-items", []);
-      const user =
-        readLocalJson("user_profile", null) ??
-        readLocalJson("mm-auth-user", null);
       const response = await sendSupportMessage(
         {
           ticket_id: ticketId || undefined,
           message,
           intent,
-          customer_name: user?.full_name ?? "",
-          customer_email: user?.email ?? "",
-          customer_phone: user?.phone ?? "",
-          cart_items: Array.isArray(cart)
-            ? cart.slice(0, 20).map((item) => ({
-                name: item.name ?? item.title ?? "Storefront item",
-              quantity: Math.min(99, Math.max(1, Number(item.quantity) || 1)),
-              }))
-            : [],
           attachments: attachment ? [attachment] : [],
         },
         token,
@@ -304,9 +283,9 @@ function SupportWidget() {
                     </div>
                   )}
                 {message.sender_type === "BOT" &&
-                  /^Order .+ is currently .+\. Payment status: .+\.$/.test(message.message) && (
+                    /^Order .+ is currently .+\./.test(message.message) && (
                     <span className="support-order-status-chip">
-                      {message.message.match(/^Order .+ is currently (.+)\. Payment status: .+\.$/)?.[1]}
+                        {message.message.match(/^Order .+ is currently (.+?)\./)?.[1]}
                     </span>
                   )}
                 {message.attachments?.map((file) => (
@@ -389,10 +368,10 @@ function SupportWidget() {
           </form>
           <footer className="support-window-footer">
             {status === "WAITING_AGENT"
-              ? "A support agent will reply here."
+              ? "A support agent will reply here. Never send passwords, codes, PINs, or payment details or documents."
               : whatsappDirectBypass
-                ? "We typically reply within a few minutes."
-                : "Message us anytime for help."}
+                ? "We typically reply within a few minutes. Never send passwords, codes, PINs, payment details, or private documents."
+                : "Message us anytime. Never send passwords, codes, PINs, payment details, or private documents."}
           </footer>
         </section>
       )}

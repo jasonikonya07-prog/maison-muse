@@ -124,6 +124,12 @@ belong only in Render's `DATABASE_URL` secret.
   seller account.
 - `GET /api/seller/stores/{store_slug}` — public approved-vendor profile and
   catalog for the `/store/{store_slug}` storefront page.
+- `POST /api/support/message` — knowledge-guided support automation for
+  storefront, seller, payment, delivery, and order questions. It does not send
+  conversations to a third-party AI provider or use customer chats for model
+  training. Credential-like content is not saved as chat text, and contact
+  details in message text are redacted; cancellation/refund decisions are
+  handed to support agents.
 - `GET /api/admin/marketplace` — administrator marketplace verification queue,
   earned commissions, pending eligible payouts, and payout ledger.
 - `PATCH /api/admin/marketplace/seller-portal-maintenance` — globally block or

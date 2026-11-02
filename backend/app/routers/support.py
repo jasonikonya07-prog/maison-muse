@@ -56,10 +56,39 @@ TRACKING_REPLY = (
     "search bar or visit the Order Tracking page (`/orders/:trackingId`). You'll see "
     "live progress from packing to courier delivery."
 )
+ORDER_CANCEL_REPLY = (
+    "I can’t cancel or change an order automatically. I’ve sent your request to "
+    "Maison Muse Support so an agent can review it. Please include only your order "
+    "number if you have it—never send a password, one-time code, PIN, or payment "
+    "details. Do not place a second order while you wait for confirmation."
+)
+REFUND_RETURN_REPLY = (
+    "Refunds and returns need a support review, and I can’t approve or issue one "
+    "automatically. I’ve sent your request to a support agent. Keep your order "
+    "number available, but don’t share passwords, one-time codes, PINs, or full "
+    "payment details in chat."
+)
+DELIVERY_ISSUE_REPLY = (
+    "For a delayed or missing delivery, check the latest steps on the Order Tracking "
+    "page using your tracking ID. If the estimate has passed or tracking has stopped, "
+    "I’ve sent this to a support agent to investigate."
+)
+ACCOUNT_ACCESS_REPLY = (
+    "For sign-in trouble, use the account sign-in page and its password recovery "
+    "option. Support will never ask you to send your password, PIN, one-time code, "
+    "or full payment details in chat."
+)
+PRIVACY_REPLY = (
+    "For your safety, I don’t handle or reveal passwords, one-time codes, PINs, "
+    "full card or bank details, or private account data. That content was not saved "
+    "as a chat message. Please resend your question without those details; never "
+    "share a password or verification code with anyone."
+)
 VERIFICATION_REPLY = (
     "Every seller on Maison Muse undergoes KYC verification. Click on any green "
-    "'Verified Seller' badge next to a product to inspect their registration date, "
-    "verified phone number, trust score, and customer review history."
+    "'Verified Seller' badge or use Verify Seller to inspect their verification "
+    "status, public store details, trust indicators, and verified buyer reviews. "
+    "I can’t reveal private contact or account information."
 )
 FALLBACK_REPLY = (
     "I couldn't match that to a topic yet. Ask about Seller Plans, M-Pesa, or connect "
@@ -71,6 +100,36 @@ FALLBACK_ACTIONS = [
     {"intent": "human", "label": "Connect with Live Admin"},
 ]
 SUPPORT_INTENT_PATTERNS = (
+    (
+        "order_cancel",
+        r"\b(?:cancel|cancell?ation|stop|void)\b.{0,50}\b(?:my\s+)?orders?\b|"
+        r"\b(?:orders?)\b.{0,50}\b(?:cancel|cancell?ation|stop|void)\b",
+    ),
+    (
+        "refund_return",
+        r"\b(?:refund|return|exchange|money\s+back|charged\s+twice)\b",
+    ),
+    (
+        "delivery_problem",
+        r"\b(?:late|delayed|missing|lost|not\s+arrived|never\s+arrived)\b.{0,40}"
+        r"\b(?:delivery|order|package|parcel|courier)\b|"
+        r"\b(?:delivery|order|package|parcel|courier)\b.{0,40}"
+        r"\b(?:late|delayed|missing|lost|not\s+arrived|never\s+arrived)\b",
+    ),
+    (
+        "account_access",
+        r"\b(?:can'?t|cannot|unable\s+to|trouble\s+)?(?:log\s*in|sign\s*in|"
+        r"access\s+my\s+account|forgot\s+my\s+password)\b",
+    ),
+    (
+        "privacy",
+        r"\b(?:show|tell|give|reveal|find|what\s+is)\b.{0,50}\b(?:private|personal|"
+        r"someone\s+else'?s?\s+(?:order|account|phone|address|email)|phone\s+number|"
+        r"home\s+address|password|"
+        r"passcode|one[\s-]*time\s+(?:password|code|pin)|otp|verification\s+code|"
+        r"security\s+code|pin|cvv|cvc|bank\s+account|card\s+number|private\s+key|"
+        r"seed\s+phrase|national\s+id|someone\s+else'?s?\s+(?:order|account))\b",
+    ),
     (
         "seller_plans",
         r"\b(?:monthly|subscription|pricing|plans?|commission|fees?|tier|"
@@ -96,6 +155,25 @@ SUPPORT_INTENT_PATTERNS = (
         r"\b(?:verify|verified|verification|badge|trust|scam|phone\s+number|"
         r"is\s+(?:this\s+)?seller\s+real)\b",
     ),
+)
+SENSITIVE_SUPPORT_CONTENT_PATTERNS = (
+    r"\b(?:password|passcode|pin|otp|one[\s-]*time\s+(?:password|code|pin)|"
+    r"verification\s+code|security\s+code)\s*(?:is|:|=)\s*[A-Za-z0-9@#$%^&*!_-]{4,}",
+    r"\b(?:credit|debit)?\s*card(?:\s*number)?\D{0,12}(?:\d[ -]?){13,19}\b",
+    r"\b(?:cvv|cvc|security\s+code)\D{0,5}\d{3,4}\b",
+    r"\b(?:bank\s+account|account\s+number|national\s+id|passport\s+number)"
+    r"\D{0,8}[A-Z0-9-]{6,}\b",
+    r"\b(?:api\s+key|private\s+key|seed\s+phrase)\s*(?:is|:|=)\s*\S{8,}",
+)
+REDACTED_SENSITIVE_MESSAGE = (
+    "[Message hidden for safety because it contained sensitive information.]"
+)
+SUPPORT_EMAIL_PATTERN = re.compile(
+    r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.IGNORECASE
+)
+SUPPORT_PHONE_PATTERN = re.compile(
+    r"(?<![A-Z0-9-])(?:\+?254|0)(?:[\s().-]*\d){8,10}(?![A-Z0-9-])",
+    re.IGNORECASE,
 )
 ALLOWED_ATTACHMENT_SIGNATURES = {
     "image/jpeg": (b"\xff\xd8\xff",),
@@ -153,6 +231,11 @@ class SupportMessageInput(BaseModel):
     intent: Literal[
         "message",
         "order_status",
+        "order_cancel",
+        "refund_return",
+        "delivery_problem",
+        "account_access",
+        "privacy",
         "seller_signup",
         "seller_plans",
         "farmer_whatsapp",
@@ -348,6 +431,11 @@ def _classify_support_intent(intent: str, message: str) -> str:
         "farmer_whatsapp",
         "mpesa_help",
         "seller_verification",
+        "order_cancel",
+        "refund_return",
+        "delivery_problem",
+        "account_access",
+        "privacy",
     }:
         return intent
     for candidate, pattern in SUPPORT_INTENT_PATTERNS:
@@ -364,14 +452,38 @@ def _classify_support_intent(intent: str, message: str) -> str:
     return "fallback"
 
 
+def _contains_sensitive_support_content(message: str) -> bool:
+    return any(
+        re.search(pattern, message, re.IGNORECASE)
+        for pattern in SENSITIVE_SUPPORT_CONTENT_PATTERNS
+    )
+
+
+def _redact_support_contact_info(message: str) -> str:
+    without_emails = SUPPORT_EMAIL_PATTERN.sub("[contact details removed]", message)
+    return SUPPORT_PHONE_PATTERN.sub("[contact details removed]", without_emails)
+
+
 def _automated_reply(
     connection, intent: str, message: str, user_id: int | None = None
 ) -> tuple[str, list[dict]]:
+    classified_intent = _classify_support_intent(intent, message)
+    if classified_intent == "privacy":
+        return PRIVACY_REPLY, []
+    if classified_intent == "order_cancel":
+        return ORDER_CANCEL_REPLY, []
+    if classified_intent == "refund_return":
+        return REFUND_RETURN_REPLY, []
+    if classified_intent == "delivery_problem":
+        return DELIVERY_ISSUE_REPLY, []
+    if classified_intent == "account_access":
+        return ACCOUNT_ACCESS_REPLY, []
+
     normalized = message.strip().upper()
     if normalized and normalized != "WHERE IS MY ORDER?":
         order = connection.execute(
             """
-            SELECT order_number, status, payment_status, gateway_tracking_id
+            SELECT order_number, status, gateway_tracking_id
             FROM orders
             WHERE order_number = ? OR gateway_tracking_id = ?
             LIMIT 1
@@ -393,12 +505,11 @@ def _automated_reply(
     if order:
         return (
             f"Order {order['order_number']} is currently "
-            f"{order['status'].replace('_', ' ').title()}. Payment status: "
-            f"{order['payment_status'].replace('_', ' ').title()}.",
+            f"{order['status'].replace('_', ' ').title()}. "
+            "For payment or account details, sign in securely or contact support.",
             [],
         )
 
-    classified_intent = _classify_support_intent(intent, message)
     if classified_intent == "seller_plans":
         return SUBSCRIPTION_REPLY, []
     if classified_intent == "farmer_whatsapp":
@@ -503,13 +614,32 @@ async def send_support_message(
     support_token: str = Header(default="", alias="X-Support-Token"),
 ) -> dict:
     user_id = _authenticated_user_id(request)
-    attachments = [item.model_dump() for item in payload.attachments]
+    contains_sensitive_content = _contains_sensitive_support_content(payload.message)
+    safe_message = (
+        REDACTED_SENSITIVE_MESSAGE
+        if contains_sensitive_content
+        else _redact_support_contact_info(payload.message.strip())
+    )
+    attachments = (
+        []
+        if contains_sensitive_content
+        else [item.model_dump() for item in payload.attachments]
+    )
+    classified_intent = (
+        "privacy"
+        if contains_sensitive_content
+        else _classify_support_intent(payload.intent, payload.message)
+    )
     with get_connection() as connection:
         connection.execute("BEGIN IMMEDIATE")
         ticket, issued_token = _ensure_ticket(
             connection, payload, support_token, user_id
         )
-        is_human_request = payload.intent == "human"
+        is_human_request = payload.intent == "human" or classified_intent in {
+            "order_cancel",
+            "refund_return",
+            "delivery_problem",
+        }
         status_value = (
             "WAITING_AGENT"
             if is_human_request
@@ -522,12 +652,12 @@ async def send_support_message(
             (status_value, _timestamp(), ticket["id"]),
         )
         user_message = None
-        if payload.message.strip() or attachments:
+        if safe_message or attachments:
             user_message = _add_message(
                 connection,
                 ticket["id"],
                 "USER",
-                payload.message.strip(),
+                safe_message,
                 ticket["customer_name"] or "Customer",
                 attachments,
             )
@@ -535,8 +665,12 @@ async def send_support_message(
         if user_message and status_value in {"BOT", "WAITING_AGENT"}:
             reply_text, suggested_actions = _automated_reply(
                 connection,
-                payload.intent,
-                payload.message,
+                classified_intent,
+                (
+                    "I shared sensitive information."
+                    if contains_sensitive_content
+                    else safe_message
+                ),
                 ticket["user_id"],
             )
             bot_message = _add_message(
