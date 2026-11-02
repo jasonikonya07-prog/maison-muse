@@ -124,7 +124,7 @@ class OrderItemInput(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
     product_id: str = Field(min_length=1, max_length=100)
-    quantity: int = Field(ge=1, le=99)
+    quantity: int = Field(ge=1, le=1_000_000)
     variant: str = Field(default="", max_length=50)
 
 

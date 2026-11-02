@@ -2390,6 +2390,53 @@ class StoreApiTests(unittest.TestCase):
         self.assertEqual(unknown.status_code, 404)
         self.assertEqual(out_of_stock.status_code, 409)
 
+    def test_demo_checkout_accepts_quantities_above_99_when_in_stock(self) -> None:
+        seller = self.register_seller(self.client, "Bulk Order Studio")
+        self.login_admin()
+        self.approve_seller(seller["id"])
+        product = self.client.post(
+            "/api/seller/products",
+            headers=self.seller_write_headers,
+            json={
+                "name": "Bulk Order Lotion",
+                "brand": "Bulk Order",
+                "sku": "BULK-LOTION-300",
+                "category": "Skincare & Glow",
+                "detail": "A lotion available in bulk",
+                "description": "A moisturizer with enough inventory for bulk orders.",
+                "price": 400,
+                "stock": 300,
+                "images": ["https://images.example/bulk-lotion.jpg"],
+            },
+        )
+        self.assertEqual(product.status_code, 201, product.text)
+        self.approve_seller_product(product.json()["id"])
+
+        with patch.dict(os.environ, {"DEMO_CHECKOUT_ENABLED": "true"}):
+            checkout = self.client.post(
+                "/api/orders/checkout",
+                json={
+                    "customer": {
+                        "name": "Jamie Rivers",
+                        "phone": "+1 555 123 4567",
+                        "address": "18 Garden Lane, Portland",
+                    },
+                    "items": [
+                        {"product_id": product.json()["id"], "quantity": 300}
+                    ],
+                    "city": "Nairobi",
+                    "mpesa_phone": "0712345678",
+                },
+            )
+
+        self.assertEqual(checkout.status_code, 201, checkout.text)
+        self.assertEqual(checkout.json()["sub_orders"][0]["items"][0]["quantity"], 300)
+        updated_product = self.client.get(
+            f"/api/products/{product.json()['id']}"
+        )
+        self.assertEqual(updated_product.status_code, 200, updated_product.text)
+        self.assertEqual(updated_product.json()["stock"], 0)
+
     def test_invalid_customer_data_is_rejected(self) -> None:
         response = self.client.post(
             "/api/orders",
