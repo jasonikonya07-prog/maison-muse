@@ -27,6 +27,7 @@ from app.auth_security import decode_access_token
 from app.config import get_database_url
 from app.data_encryption import phone_lookup_hash
 from app.database import get_connection
+from app.order_tracking import publish_order_update
 
 
 router = APIRouter()
@@ -55,12 +56,6 @@ TRACKING_REPLY = (
     "You can track any order in real time! Enter your Tracking ID on the storefront "
     "search bar or visit the Order Tracking page (`/orders/:trackingId`). You'll see "
     "live progress from packing to courier delivery."
-)
-ORDER_CANCEL_REPLY = (
-    "I can’t cancel or change an order automatically. I’ve sent your request to "
-    "Maison Muse Support so an agent can review it. Please include only your order "
-    "number if you have it—never send a password, one-time code, PIN, or payment "
-    "details. Do not place a second order while you wait for confirmation."
 )
 REFUND_RETURN_REPLY = (
     "Refunds and returns need a support review, and I can’t approve or issue one "
@@ -168,6 +163,11 @@ SENSITIVE_SUPPORT_CONTENT_PATTERNS = (
 REDACTED_SENSITIVE_MESSAGE = (
     "[Message hidden for safety because it contained sensitive information.]"
 )
+ORDER_NUMBER_PROMPT = (
+    "Send the order number beginning with MM- and I’ll check whether it can "
+    "be cancelled. I can directly cancel only an order with a failed payment "
+    "that the vendor has not started fulfilling."
+)
 SUPPORT_EMAIL_PATTERN = re.compile(
     r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.IGNORECASE
 )
@@ -175,6 +175,7 @@ SUPPORT_PHONE_PATTERN = re.compile(
     r"(?<![A-Z0-9-])(?:\+?254|0)(?:[\s().-]*\d){8,10}(?![A-Z0-9-])",
     re.IGNORECASE,
 )
+ORDER_REFERENCE_PATTERN = re.compile(r"\bMM-[A-Z0-9][A-Z0-9-]{5,39}\b", re.IGNORECASE)
 ALLOWED_ATTACHMENT_SIGNATURES = {
     "image/jpeg": (b"\xff\xd8\xff",),
     "image/png": (b"\x89PNG\r\n\x1a\n",),
@@ -232,6 +233,7 @@ class SupportMessageInput(BaseModel):
         "message",
         "order_status",
         "order_cancel",
+        "confirm_order_cancel",
         "refund_return",
         "delivery_problem",
         "account_access",
@@ -432,6 +434,7 @@ def _classify_support_intent(intent: str, message: str) -> str:
         "mpesa_help",
         "seller_verification",
         "order_cancel",
+        "confirm_order_cancel",
         "refund_return",
         "delivery_problem",
         "account_access",
@@ -464,14 +467,160 @@ def _redact_support_contact_info(message: str) -> str:
     return SUPPORT_PHONE_PATTERN.sub("[contact details removed]", without_emails)
 
 
+def _handle_order_cancellation(
+    connection, intent: str, message: str, user_id: int | None
+) -> tuple[str, list[dict], bool, list[tuple[int, int]]]:
+    if user_id is None:
+        return (
+            "Please sign in to your buyer account first. I can only check or cancel "
+            "orders after verifying that they belong to you.",
+            [],
+            False,
+            [],
+        )
+
+    buyer = connection.execute(
+        "SELECT id, role FROM users WHERE id = ?", (user_id,)
+    ).fetchone()
+    if buyer is None or buyer["role"] != "buyer":
+        return (
+            "Please sign in with the buyer account used to place the order. I can’t "
+            "verify or change an order from this account.",
+            [],
+            False,
+            [],
+        )
+
+    match = ORDER_REFERENCE_PATTERN.search(message)
+    if match is None:
+        return ORDER_NUMBER_PROMPT, [], False, []
+
+    order_number = match.group(0).upper()
+    order = connection.execute(
+        """
+        SELECT id, order_number, status, payment_status
+        FROM orders
+        WHERE order_number = ? AND buyer_id = ?
+        """,
+        (order_number, buyer["id"]),
+    ).fetchone()
+    if order is None:
+        return (
+            "I couldn’t verify that order under your signed-in buyer account, so I "
+            "made no changes. Check the order number or contact a support agent.",
+            [{"intent": "human", "label": "Talk to a Live Support Agent"}],
+            True,
+            [],
+        )
+
+    sub_orders = connection.execute(
+        """
+        SELECT id, fulfillment_status, admin_override_status
+        FROM sub_orders
+        WHERE parent_order_id = ?
+        ORDER BY id
+        """,
+        (order["id"],),
+    ).fetchall()
+    if order["status"].casefold() == "cancelled":
+        return (
+            f"Order {order_number} is already cancelled. No further changes were made.",
+            [],
+            False,
+            [],
+        )
+
+    can_cancel = (
+        order["payment_status"].casefold() == "failed"
+        and order["status"].casefold() == "pending"
+        and all(
+            sub_order["fulfillment_status"] == "PENDING"
+            and not sub_order["admin_override_status"]
+            for sub_order in sub_orders
+        )
+    )
+    if not can_cancel:
+        return (
+            "This order isn’t eligible for automatic cancellation because its payment "
+            "has not definitively failed or vendor fulfillment has begun. I’ve sent "
+            "the request to a support agent. No cancellation or refund was applied.",
+            [],
+            True,
+            [],
+        )
+
+    if intent != "confirm_order_cancel":
+        return (
+            f"Order {order_number} has a failed payment and vendor fulfillment has "
+            "not started. Select the confirmation button below to cancel it. Nothing "
+            "will change until you confirm.",
+            [
+                {
+                    "intent": "confirm_order_cancel",
+                    "label": f"Confirm cancellation {order_number}",
+                }
+            ],
+            False,
+            [],
+        )
+
+    cancellation = connection.execute(
+        """
+        UPDATE orders
+        SET status = 'cancelled',
+            updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+        WHERE id = ? AND buyer_id = ? AND status = 'pending'
+          AND payment_status = 'failed'
+        """,
+        (order["id"], buyer["id"]),
+    )
+    if cancellation.rowcount != 1:
+        return (
+            "The order changed while I was checking it, so I did not cancel it. A "
+            "support agent will review the request.",
+            [],
+            True,
+            [],
+        )
+    for sub_order in sub_orders:
+        connection.execute(
+            """
+            UPDATE sub_orders
+            SET admin_override_status = 'CANCELLED',
+                updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+            WHERE id = ? AND fulfillment_status = 'PENDING'
+              AND admin_override_status = ''
+            """,
+            (sub_order["id"],),
+        )
+        connection.execute(
+            """
+            INSERT INTO order_status_events (
+                parent_order_id, sub_order_id, status, actor, note
+            ) VALUES (?, ?, 'CANCELLED', 'buyer_support_bot', ?)
+            """,
+            (
+                order["id"],
+                sub_order["id"],
+                "Buyer confirmed cancellation; payment had failed before fulfillment.",
+            ),
+        )
+
+    return (
+        f"Order {order_number} is cancelled. Its payment had failed, so no refund "
+        "was needed. You can view the updated status on the Order Tracking page.",
+        [],
+        False,
+        [(order["id"], sub_order["id"]) for sub_order in sub_orders],
+    )
+
+
 def _automated_reply(
     connection, intent: str, message: str, user_id: int | None = None
 ) -> tuple[str, list[dict]]:
     classified_intent = _classify_support_intent(intent, message)
     if classified_intent == "privacy":
         return PRIVACY_REPLY, []
-    if classified_intent == "order_cancel":
-        return ORDER_CANCEL_REPLY, []
     if classified_intent == "refund_return":
         return REFUND_RETURN_REPLY, []
     if classified_intent == "delivery_problem":
@@ -635,11 +784,46 @@ async def send_support_message(
         ticket, issued_token = _ensure_ticket(
             connection, payload, support_token, user_id
         )
+        if (
+            classified_intent == "fallback"
+            and ORDER_REFERENCE_PATTERN.search(safe_message)
+        ):
+            previous_message = connection.execute(
+                """
+                SELECT sender_type, message
+                FROM support_messages
+                WHERE ticket_id = ?
+                ORDER BY id DESC
+                LIMIT 1
+                """,
+                (ticket["id"],),
+            ).fetchone()
+            if (
+                previous_message is not None
+                and previous_message["sender_type"] == "BOT"
+                and previous_message["message"] == ORDER_NUMBER_PROMPT
+            ):
+                classified_intent = "order_cancel"
+        cancellation_reply = None
+        cancelled_order_updates: list[tuple[int, int]] = []
+        cancellation_requires_handoff = False
+        if classified_intent in {"order_cancel", "confirm_order_cancel"}:
+            (
+                cancellation_text,
+                cancellation_actions,
+                cancellation_requires_handoff,
+                cancelled_order_updates,
+            ) = _handle_order_cancellation(
+                connection,
+                classified_intent,
+                safe_message,
+                user_id,
+            )
+            cancellation_reply = (cancellation_text, cancellation_actions)
         is_human_request = payload.intent == "human" or classified_intent in {
-            "order_cancel",
             "refund_return",
             "delivery_problem",
-        }
+        } or cancellation_requires_handoff
         status_value = (
             "WAITING_AGENT"
             if is_human_request
@@ -663,16 +847,19 @@ async def send_support_message(
             )
         bot_message = None
         if user_message and status_value in {"BOT", "WAITING_AGENT"}:
-            reply_text, suggested_actions = _automated_reply(
-                connection,
-                classified_intent,
-                (
-                    "I shared sensitive information."
-                    if contains_sensitive_content
-                    else safe_message
-                ),
-                ticket["user_id"],
-            )
+            if cancellation_reply is not None:
+                reply_text, suggested_actions = cancellation_reply
+            else:
+                reply_text, suggested_actions = _automated_reply(
+                    connection,
+                    classified_intent,
+                    (
+                        "I shared sensitive information."
+                        if contains_sensitive_content
+                        else safe_message
+                    ),
+                    ticket["user_id"],
+                )
             bot_message = _add_message(
                 connection,
                 ticket["id"],
@@ -687,6 +874,9 @@ async def send_support_message(
             "SELECT * FROM support_tickets WHERE id = ?", (ticket["id"],)
         ).fetchone()
         messages = _ticket_messages(connection, ticket["id"])
+
+    for parent_order_id, sub_order_id in cancelled_order_updates:
+        publish_order_update(request, parent_order_id, sub_order_id, "CANCELLED")
 
     if issued_token:
         response.set_cookie(

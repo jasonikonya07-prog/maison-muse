@@ -128,8 +128,10 @@ belong only in Render's `DATABASE_URL` secret.
   storefront, seller, payment, delivery, and order questions. It does not send
   conversations to a third-party AI provider or use customer chats for model
   training. Credential-like content is not saved as chat text, and contact
-  details in message text are redacted; cancellation/refund decisions are
-  handed to support agents.
+  details in message text are redacted. A signed-in buyer can confirm automatic
+  cancellation only for their own order when payment has failed and fulfillment
+  has not started; all other cancellation and refund requests are handed to an
+  agent.
 - `GET /api/admin/marketplace` — administrator marketplace verification queue,
   earned commissions, pending eligible payouts, and payout ledger.
 - `PATCH /api/admin/marketplace/seller-portal-maintenance` — globally block or

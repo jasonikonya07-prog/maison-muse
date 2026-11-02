@@ -3321,9 +3321,9 @@ class StoreApiTests(unittest.TestCase):
                 },
             )
             self.assertEqual(cancelled.status_code, 200, cancelled.text)
-            self.assertEqual(cancelled.json()["status"], "WAITING_AGENT")
+            self.assertEqual(cancelled.json()["status"], "BOT")
             self.assertIn(
-                "can’t cancel or change",
+                "sign in to your buyer account",
                 cancelled.json()["bot_reply"]["message"],
             )
 
@@ -3362,6 +3362,192 @@ class StoreApiTests(unittest.TestCase):
                 "[contact details removed]",
                 redacted.json()["messages"][-2]["message"],
             )
+
+    def test_support_bot_cancels_only_confirmed_failed_unfulfilled_buyer_orders(self) -> None:
+        registration = self.client.post(
+            "/api/auth/register",
+            json={
+                "full_name": "Order Cancellation Buyer",
+                "email": "cancellation-buyer@example.com",
+                "password": "a-very-secure-password",
+                "role": "buyer",
+                "phone": "+254700000001",
+            },
+        )
+        self.assertEqual(registration.status_code, 201, registration.text)
+        buyer_headers = {
+            "Authorization": f"Bearer {registration.json()['access_token']}"
+        }
+        order_response = self.client.post(
+            "/api/orders",
+            headers=buyer_headers,
+            json={
+                "customer": {
+                    "name": "Order Cancellation Buyer",
+                    "phone": "+254700000001",
+                    "address": "1 Buyer Road",
+                },
+                "items": [{"product_id": "perf-01", "quantity": 1}],
+            },
+        )
+        self.assertEqual(order_response.status_code, 201, order_response.text)
+        order_number = order_response.json()["order_number"]
+        seller = self.register_seller(self.client, "Cancellation Test Boutique")
+        with closing(sqlite3.connect(self.database_path)) as connection:
+            order_id = connection.execute(
+                "SELECT id FROM orders WHERE order_number = ?", (order_number,)
+            ).fetchone()[0]
+            connection.execute(
+                """
+                INSERT INTO sub_orders (
+                    parent_order_id, seller_id, items_json, subtotal,
+                    commission_amount, seller_payout_amount
+                ) VALUES (?, ?, '[]', 100, 10, 90)
+                """,
+                (order_id, seller["id"]),
+            )
+            connection.execute(
+                "UPDATE orders SET payment_status = 'failed' WHERE order_number = ?",
+                (order_number,),
+            )
+            connection.commit()
+            cancellation_state = connection.execute(
+                """
+                SELECT o.status, o.payment_status, so.fulfillment_status,
+                       so.admin_override_status
+                FROM orders o JOIN sub_orders so ON so.parent_order_id = o.id
+                WHERE o.order_number = ?
+                """,
+                (order_number,),
+            ).fetchone()
+        self.assertEqual(
+            tuple(cancellation_state), ("pending", "failed", "PENDING", "")
+        )
+        other_buyer = self.client.post(
+            "/api/auth/register",
+            json={
+                "full_name": "Different Buyer",
+                "email": "different-buyer@example.com",
+                "password": "another-secure-password",
+                "role": "buyer",
+                "phone": "+254700000002",
+            },
+        )
+        self.assertEqual(other_buyer.status_code, 201, other_buyer.text)
+        unauthorized = self.client.post(
+            "/api/support/message",
+            headers={
+                "Authorization": f"Bearer {other_buyer.json()['access_token']}"
+            },
+            json={
+                "intent": "order_cancel",
+                "message": f"Cancel order {order_number}",
+            },
+        )
+        self.assertEqual(unauthorized.status_code, 200, unauthorized.text)
+        self.assertIn(
+            "couldn’t verify",
+            unauthorized.json()["bot_reply"]["message"],
+        )
+        with closing(sqlite3.connect(self.database_path)) as connection:
+            order_status_after_unauthorized_request = connection.execute(
+                "SELECT status FROM orders WHERE order_number = ?", (order_number,)
+            ).fetchone()[0]
+        self.assertEqual(order_status_after_unauthorized_request, "pending")
+
+        request_cancellation = self.client.post(
+            "/api/support/message",
+            headers=buyer_headers,
+            json={
+                "intent": "order_cancel",
+                "message": "Cancel or change an order",
+            },
+        )
+        self.assertEqual(request_cancellation.status_code, 200, request_cancellation.text)
+        self.assertEqual(
+            request_cancellation.json()["status"],
+            "BOT",
+            request_cancellation.json(),
+        )
+        order_reference = self.client.post(
+            "/api/support/message",
+            headers=buyer_headers,
+            json={
+                "ticket_id": request_cancellation.json()["ticket_id"],
+                "message": order_number,
+            },
+        )
+        self.assertEqual(order_reference.status_code, 200, order_reference.text)
+        self.assertEqual(order_reference.json()["status"], "BOT")
+        self.assertIn(
+            "nothing will change until you confirm",
+            order_reference.json()["bot_reply"]["message"].lower(),
+        )
+        confirm_action = order_reference.json()["bot_reply"]["suggested_actions"][0]
+        self.assertEqual(confirm_action["intent"], "confirm_order_cancel")
+
+        confirmed = self.client.post(
+            "/api/support/message",
+            headers=buyer_headers,
+            json={
+                "ticket_id": order_reference.json()["ticket_id"],
+                "intent": confirm_action["intent"],
+                "message": confirm_action["label"],
+            },
+        )
+        self.assertEqual(confirmed.status_code, 200, confirmed.text)
+        self.assertIn("is cancelled", confirmed.json()["bot_reply"]["message"])
+        self.assertEqual(confirmed.json()["status"], "BOT")
+        tracking = self.client.get(f"/api/orders/track/{order_number}")
+        self.assertEqual(tracking.status_code, 200, tracking.text)
+        self.assertEqual(tracking.json()["status"], "CANCELLED")
+        with closing(sqlite3.connect(self.database_path)) as connection:
+            order_status = connection.execute(
+                "SELECT status FROM orders WHERE order_number = ?", (order_number,)
+            ).fetchone()[0]
+            events = connection.execute(
+                """
+                SELECT status, actor FROM order_status_events
+                WHERE parent_order_id = (
+                    SELECT id FROM orders WHERE order_number = ?
+                )
+                ORDER BY id DESC
+                """,
+                (order_number,),
+            ).fetchall()
+        self.assertEqual(order_status, "cancelled")
+        self.assertEqual(tuple(events[0]), ("CANCELLED", "buyer_support_bot"))
+
+        pending_order = self.client.post(
+            "/api/orders",
+            headers=buyer_headers,
+            json={
+                "customer": {
+                    "name": "Order Cancellation Buyer",
+                    "phone": "+254700000001",
+                    "address": "1 Buyer Road",
+                },
+                "items": [{"product_id": "perf-01", "quantity": 1}],
+            },
+        )
+        self.assertEqual(pending_order.status_code, 201, pending_order.text)
+        pending_number = pending_order.json()["order_number"]
+        blocked = self.client.post(
+            "/api/support/message",
+            headers=buyer_headers,
+            json={
+                "intent": "order_cancel",
+                "message": f"Please cancel order {pending_number}",
+            },
+        )
+        self.assertEqual(blocked.status_code, 200, blocked.text)
+        self.assertEqual(blocked.json()["status"], "WAITING_AGENT")
+        self.assertIn("no cancellation or refund was applied", blocked.json()["bot_reply"]["message"].lower())
+        with closing(sqlite3.connect(self.database_path)) as connection:
+            unchanged_status = connection.execute(
+                "SELECT status FROM orders WHERE order_number = ?", (pending_number,)
+            ).fetchone()[0]
+        self.assertEqual(unchanged_status, "pending")
 
     def test_customer_support_handoff_admin_reply_and_websocket_delivery(self) -> None:
         from fastapi.testclient import TestClient
