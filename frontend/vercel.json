@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/api/admin/:path*",
+      "destination": "https://maison-muse.onrender.com/api/admin/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

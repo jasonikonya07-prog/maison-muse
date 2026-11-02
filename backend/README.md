@@ -79,7 +79,9 @@ root `render.yaml`.
 
 1. Import the repository in Vercel and set the project **Root Directory** to
    `frontend`. Vercel uses `frontend/vercel.json` for client-side route
-   fallback; the Vite build outputs to `dist`.
+   fallback and proxies `/api/admin/*` through the Vercel origin so the
+   administrator's HTTP-only session cookie works with the API hosted on
+   Render; the Vite build outputs to `dist`.
 2. Set `VITE_API_BASE_URL` to the Render API origin, e.g.
    `https://maison-muse-api.onrender.com` (no trailing slash). Set
    `VITE_GOOGLE_CLIENT_ID` to the same web client ID used by the backend.

@@ -41,7 +41,7 @@ function getApiErrorMessage(payload, fallback) {
 async function adminRequest(path, { method = "GET", body, signal } = {}) {
   let response;
   try {
-    response = await fetch(`${API_BASE_URL}/api/admin${path}`, {
+    response = await fetch(`/api/admin${path}`, {
       method,
       credentials: "include",
       headers: {
@@ -535,7 +535,7 @@ export const downloadAdminAuditLogs = async (filters, format) => {
   }
   params.set("export", format);
   const response = await fetch(
-    `${API_BASE_URL}/api/admin/audit-logs?${params}`,
+    `/api/admin/audit-logs?${params}`,
     {
       credentials: "include",
       headers: { Accept: format === "csv" ? "text/csv" : "application/json" },
@@ -719,7 +719,7 @@ export const fetchMarketplaceAnalytics = () =>
 export async function fetchStorefrontStatus() {
   let response;
   try {
-    response = await fetch(`${API_BASE_URL}/api/admin/storefront/status`, {
+    response = await fetch("/api/admin/storefront/status", {
       headers: { Accept: "application/json" },
       cache: "no-store",
     });
