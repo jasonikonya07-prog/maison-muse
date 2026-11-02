@@ -2098,6 +2098,76 @@
   line-height: 1.5;
 }
 
+.seller-payout-success {
+  max-width: 680px;
+  margin: 24px auto;
+  border: 1px solid #dce9df;
+  border-radius: 16px;
+  padding: clamp(24px, 5vw, 44px);
+  background: linear-gradient(145deg, #fff, #f7fbf7);
+  text-align: center;
+}
+
+.seller-payout-success-icon {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  color: #318254;
+  background: #e9f5ed;
+}
+
+.seller-payout-success h2 {
+  margin: 8px 0;
+  color: #393034;
+  font: 500 clamp(25px, 4vw, 34px) Georgia, serif;
+}
+
+.seller-payout-success-note {
+  max-width: 480px;
+  margin: 0 auto 22px;
+  color: #756a6d;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.seller-payout-success dl {
+  margin: 0 0 24px;
+  border: 1px solid #eee8e5;
+  border-radius: 10px;
+  padding: 4px 16px;
+  background: #fff;
+  text-align: left;
+}
+
+.seller-payout-success dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid #f0ecea;
+  padding: 12px 0;
+}
+
+.seller-payout-success dl > div:last-child {
+  border-bottom: 0;
+}
+
+.seller-payout-success dt {
+  color: #817679;
+  font-size: 12px;
+}
+
+.seller-payout-success dd {
+  margin: 0;
+  color: #453b3e;
+  font-size: 12px;
+  font-weight: 650;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
 .seller-payout-action {
   display: grid;
   justify-items: end;

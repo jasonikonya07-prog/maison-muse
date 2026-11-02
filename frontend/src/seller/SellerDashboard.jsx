@@ -24,6 +24,7 @@ import {
   Tags,
   MapPinned,
   RefreshCw,
+  CheckCircle2,
   Mail,
   Lightbulb,
   Menu,
@@ -440,6 +441,7 @@ function SellerDashboard() {
   const [bulkDiscount, setBulkDiscount] = useState("10");
   const [productPreview, setProductPreview] = useState(null);
   const [dispatchDetails, setDispatchDetails] = useState({});
+  const [payoutSuccess, setPayoutSuccess] = useState(null);
   const [payoutForm, setPayoutForm] = useState({
     amount: "500",
     destination_type: "registered_phone",
@@ -976,6 +978,7 @@ function SellerDashboard() {
   const requestDemoPayout = async (requestedAmount = Number(payoutForm.amount)) => {
     setSaving(true);
     setError("");
+    setNotice("");
     try {
       const payout = await simulateSellerPayout({
         amount: requestedAmount,
@@ -984,17 +987,26 @@ function SellerDashboard() {
           ? {}
           : { destination: payoutForm.destination }),
       });
-      const [nextDashboard, nextPayouts] = await Promise.all([
-        fetchSellerDashboard(analyticsPeriod),
-        fetchSellerPayouts(),
-      ]);
-      setDashboard(nextDashboard);
-      setPayouts(nextPayouts);
-      setNotice(`${payout.message} ${payout.destination_hint} · Reference: ${payout.transaction_id}`);
-      setPayoutForm((current) => ({
-        ...current,
-        amount: Math.min(500, nextDashboard.available_balance).toFixed(2),
-      }));
+      setPayoutSuccess({
+        ...payout,
+        payout_method: payout.payout_method ?? "M-Pesa",
+        created_at: new Date().toISOString(),
+        is_demo: payout.is_demo ?? true,
+      });
+      try {
+        const [nextDashboard, nextPayouts] = await Promise.all([
+          fetchSellerDashboard(analyticsPeriod),
+          fetchSellerPayouts(),
+        ]);
+        setDashboard(nextDashboard);
+        setPayouts(nextPayouts);
+        setPayoutForm((current) => ({
+          ...current,
+          amount: Math.min(500, nextDashboard.available_balance).toFixed(2),
+        }));
+      } catch (refreshError) {
+        setError(`Withdrawal succeeded, but the latest balance could not be loaded: ${refreshError.message}`);
+      }
     } catch (payoutError) {
       setError(payoutError.message);
     } finally {
@@ -1432,6 +1444,34 @@ function SellerDashboard() {
 
               {activeTab === "payouts" && (
                 <div className="seller-tab-content">
+                  {payoutSuccess ? (
+                    <section className="seller-payout-success" role="status" aria-live="polite">
+                      <div className="seller-payout-success-icon"><CheckCircle2 size={34} /></div>
+                      <span className="marketplace-eyebrow">WITHDRAWAL CONFIRMATION</span>
+                      <h2>{payoutSuccess.is_demo ? "Demo withdrawal successful" : "Withdrawal successful"}</h2>
+                      <p className="seller-payout-success-note">
+                        {payoutSuccess.is_demo
+                          ? "This is a simulated payout for testing. No real money was transferred."
+                          : "Your payout was submitted successfully."}
+                      </p>
+                      <dl>
+                        <div><dt>Amount</dt><dd>{formatKsh(payoutSuccess.amount)}</dd></div>
+                        <div><dt>Destination</dt><dd>{payoutSuccess.destination_hint}</dd></div>
+                        <div><dt>Method</dt><dd>{payoutSuccess.payout_method}</dd></div>
+                        <div><dt>Status</dt><dd>{payoutSuccess.status}</dd></div>
+                        <div><dt>Transaction reference</dt><dd>{payoutSuccess.transaction_id || payoutSuccess.reference}</dd></div>
+                        <div><dt>Date</dt><dd>{new Date(payoutSuccess.created_at).toLocaleString()}</dd></div>
+                      </dl>
+                      <button
+                        type="button"
+                        className="marketplace-button primary"
+                        onClick={() => setPayoutSuccess(null)}
+                      >
+                        Back to financial ledger
+                      </button>
+                    </section>
+                  ) : (
+                    <>
                   <div className="seller-fee-breakdown">
                     <span>Paid gross sales <strong>{formatKsh(dashboard?.gross_sales ?? 0)}</strong></span>
                     <span>− Platform commission ({commissionRate}%) <strong>{formatKsh((dashboard?.gross_sales ?? 0) - (dashboard?.net_earnings ?? 0))}</strong></span>
@@ -1495,6 +1535,8 @@ function SellerDashboard() {
                       ))}</tbody>
                     </table></div> : <p className="marketplace-empty">Payout transactions will appear here.</p>}
                   </section>
+                    </>
+                  )}
                 </div>
               )}
 
