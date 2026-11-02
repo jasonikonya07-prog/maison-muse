@@ -3337,6 +3337,25 @@ class StoreApiTests(unittest.TestCase):
                 bot_response.json()["bot_reply"]["message"],
             )
 
+            seller_blocked = guest_client.post(
+                "/api/support/message",
+                json={"message": "I am a seller and my account has been blocked"},
+            )
+            self.assertEqual(seller_blocked.status_code, 200, seller_blocked.text)
+            self.assertEqual(seller_blocked.json()["status"], "WAITING_AGENT")
+            self.assertIn(
+                "seller-access issue",
+                seller_blocked.json()["bot_reply"]["message"],
+            )
+            self.assertIn(
+                "password",
+                seller_blocked.json()["bot_reply"]["message"],
+            )
+            self.assertNotIn(
+                "seller registration",
+                seller_blocked.json()["bot_reply"]["message"],
+            )
+
             handoff = guest_client.post(
                 "/api/support/message",
                 json={"message": "Talk to an agent", "intent": "human"},

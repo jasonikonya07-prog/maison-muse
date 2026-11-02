@@ -73,6 +73,13 @@ ACCOUNT_ACCESS_REPLY = (
     "option. Support will never ask you to send your password, PIN, one-time code, "
     "or full payment details in chat."
 )
+SELLER_ACCOUNT_BLOCKED_REPLY = (
+    "I’m routing this seller-access issue to a live support agent for review. Please "
+    "check the email address registered to your store for an account notice. You can "
+    "share your store name or seller ID here, but never send your password, PIN, "
+    "one-time code, or full payment details. The agent will confirm the account status "
+    "and next steps."
+)
 PRIVACY_REPLY = (
     "For your safety, I don’t handle or reveal passwords, one-time codes, PINs, "
     "full card or bank details, or private account data. That content was not saved "
@@ -95,6 +102,14 @@ FALLBACK_ACTIONS = [
     {"intent": "human", "label": "Connect with Live Admin"},
 ]
 SUPPORT_INTENT_PATTERNS = (
+    (
+        "seller_account_blocked",
+        r"\b(?:seller|vendor|merchant|store|boutique)\b.{0,60}"
+        r"\b(?:blocked|suspended|suspension|banned|disabled|locked|restricted|"
+        r"account\s+(?:closed|blocked|suspended))\b|"
+        r"\b(?:blocked|suspended|banned|disabled|locked|restricted)\b.{0,60}"
+        r"\b(?:seller|vendor|merchant|store|boutique|selling\s+account)\b",
+    ),
     (
         "order_cancel",
         r"\b(?:cancel|cancell?ation|stop|void)\b.{0,50}\b(?:my\s+)?orders?\b|"
@@ -240,6 +255,7 @@ class SupportMessageInput(BaseModel):
         "privacy",
         "seller_signup",
         "seller_plans",
+        "seller_account_blocked",
         "farmer_whatsapp",
         "seller_verification",
         "mpesa_help",
@@ -433,6 +449,7 @@ def _classify_support_intent(intent: str, message: str) -> str:
         "farmer_whatsapp",
         "mpesa_help",
         "seller_verification",
+        "seller_account_blocked",
         "order_cancel",
         "confirm_order_cancel",
         "refund_return",
@@ -627,6 +644,10 @@ def _automated_reply(
         return DELIVERY_ISSUE_REPLY, []
     if classified_intent == "account_access":
         return ACCOUNT_ACCESS_REPLY, []
+    if classified_intent == "seller_account_blocked":
+        return SELLER_ACCOUNT_BLOCKED_REPLY, [
+            {"intent": "human", "label": "Continue with Live Support"}
+        ]
 
     normalized = message.strip().upper()
     if normalized and normalized != "WHERE IS MY ORDER?":
@@ -823,6 +844,7 @@ async def send_support_message(
         is_human_request = payload.intent == "human" or classified_intent in {
             "refund_return",
             "delivery_problem",
+            "seller_account_blocked",
         } or cancellation_requires_handoff
         status_value = (
             "WAITING_AGENT"

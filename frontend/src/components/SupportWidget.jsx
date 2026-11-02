@@ -13,6 +13,7 @@ const QUICK_ACTIONS = [
   { intent: "order_status", label: "Where is my order?" },
   { intent: "order_cancel", label: "Cancel or change an order" },
   { intent: "refund_return", label: "Returns and refunds" },
+  { intent: "seller_account_blocked", label: "My seller account is blocked" },
   { intent: "seller_signup", label: "How do I sell on Maison Muse?" },
   { intent: "mpesa_help", label: "M-Pesa payment issue" },
   { intent: "human", label: "Talk to a Live Support Agent" },
