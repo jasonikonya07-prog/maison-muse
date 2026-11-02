@@ -1283,6 +1283,10 @@ class StoreApiTests(unittest.TestCase):
         self.assertTrue(checkout.json()["transaction_reference"].startswith("MPESA-"))
         self.assertEqual(checkout.json()["sub_orders"][0]["store_name"], "Cedar Glow Studio")
 
+        initial_dashboard = self.client.get("/api/seller/dashboard").json()
+        self.assertEqual(initial_dashboard["available_balance"], 0)
+        self.assertEqual(initial_dashboard["pending_delivery_balance"], 900)
+
         seller_order = self.client.get("/api/seller/orders").json()[0]
         self.assertEqual(seller_order["payment_status"], "completed_demo")
         self.assertEqual(seller_order["fulfillment_status"], "PENDING")
@@ -1298,6 +1302,7 @@ class StoreApiTests(unittest.TestCase):
         dashboard = self.client.get("/api/seller/dashboard").json()
         self.assertEqual(dashboard["gross_sales"], 1000)
         self.assertEqual(dashboard["available_balance"], 900)
+        self.assertEqual(dashboard["pending_delivery_balance"], 0)
         weekly_dashboard = self.client.get("/api/seller/dashboard?period=7d").json()
         self.assertEqual(weekly_dashboard["analytics_period"], "7d")
         self.assertEqual(len(weekly_dashboard["sales_series"]), 7)

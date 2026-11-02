@@ -2090,6 +2090,14 @@
   font-size: 11px;
 }
 
+.seller-pending-escrow {
+  max-width: 520px;
+  margin: 2px 0 0;
+  color: #875b1d;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .seller-payout-action {
   display: grid;
   justify-items: end;

@@ -1435,10 +1435,19 @@ function SellerDashboard() {
                   <div className="seller-fee-breakdown">
                     <span>Paid gross sales <strong>{formatKsh(dashboard?.gross_sales ?? 0)}</strong></span>
                     <span>− Platform commission ({commissionRate}%) <strong>{formatKsh((dashboard?.gross_sales ?? 0) - (dashboard?.net_earnings ?? 0))}</strong></span>
-                    <span>= Net seller earnings <strong>{formatKsh(dashboard?.net_earnings ?? 0)}</strong></span>
+                    <span>= Net seller earnings (including escrow) <strong>{formatKsh(dashboard?.net_earnings ?? 0)}</strong></span>
                   </div>
                   <section className="seller-payout-summary">
-                    <div><span className="marketplace-eyebrow">AVAILABLE BALANCE</span><strong>{formatKsh(dashboard?.available_balance ?? 0)}</strong><small>Paid, delivered orders not yet allocated to a payout.</small></div>
+                    <div>
+                      <span className="marketplace-eyebrow">AVAILABLE BALANCE</span>
+                      <strong>{formatKsh(dashboard?.available_balance ?? 0)}</strong>
+                      <small>Paid and delivered orders not yet allocated to a payout.</small>
+                      {(dashboard?.pending_delivery_balance ?? 0) > 0 && (
+                        <p className="seller-pending-escrow">
+                          {formatKsh(dashboard.pending_delivery_balance)} is held in escrow until the orders are marked delivered. Check Order Fulfillment after delivery.
+                        </p>
+                      )}
+                    </div>
                     <div className="seller-payout-action">
                       <span className="seller-demo-badge">SIMULATION ONLY · NO REAL TRANSFER</span>
                       <div className="seller-withdrawal-fields">

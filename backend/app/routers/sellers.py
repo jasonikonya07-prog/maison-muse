@@ -629,6 +629,29 @@ def seller_dashboard(
             """,
             (seller["id"],),
         ).fetchone()[0]
+        pending_delivery_balance = connection.execute(
+            """
+            SELECT COALESCE(SUM(
+                COALESCE(ledger.net_amount, so.seller_payout_amount)
+                - COALESCE(ledger.paid_amount, 0)
+            ), 0)
+            FROM sub_orders so
+            JOIN orders o ON o.id = so.parent_order_id
+            LEFT JOIN payout_allocations pa ON pa.sub_order_id = so.id
+            LEFT JOIN seller_payout_ledger ledger ON ledger.sub_order_id = so.id
+            WHERE so.seller_id = ? AND o.payment_status IN ('paid', 'completed_demo')
+              AND so.fulfillment_status != 'DELIVERED'
+              AND so.admin_override_status NOT IN ('DELIVERED', 'CANCELLED')
+              AND pa.sub_order_id IS NULL
+              AND NOT EXISTS (
+                  SELECT 1 FROM seller_payout_ledger paid_ledger
+                  WHERE paid_ledger.sub_order_id = so.id
+                    AND paid_ledger.status = 'PAID (DEMO)'
+                    AND paid_ledger.paid_amount >= paid_ledger.net_amount
+              )
+            """,
+            (seller["id"],),
+        ).fetchone()[0]
         ad_spend = connection.execute(
             """
             SELECT COALESCE(SUM(amount), 0)
@@ -685,6 +708,7 @@ def seller_dashboard(
         "selected_plan": seller["selected_plan"] or "boutique",
         "commission_rate": seller["commission_rate"],
         "available_balance": round(available_balance, 2),
+        "pending_delivery_balance": round(pending_delivery_balance, 2),
         "analytics_period": period,
         "sales_series": sales_series,
     }
