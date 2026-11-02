@@ -1014,6 +1014,19 @@ function SellerDashboard() {
     }
   };
 
+  const refreshSellerFinancials = async () => {
+    try {
+      const [nextDashboard, nextPayouts] = await Promise.all([
+        fetchSellerDashboard(analyticsPeriod),
+        fetchSellerPayouts(),
+      ]);
+      setDashboard(nextDashboard);
+      setPayouts(nextPayouts);
+    } catch (refreshError) {
+      setError(`Order status was updated, but the latest balance could not be loaded: ${refreshError.message}`);
+    }
+  };
+
   if (checking) return <main className="seller-auth-screen"><p>Preparing your seller portal…</p></main>;
   if (portalStatusError) {
     return (
@@ -1440,7 +1453,12 @@ function SellerDashboard() {
                 </div>
               )}
 
-              {activeTab === "orders" && <OrderFulfillment readOnly={demoMode} />}
+              {activeTab === "orders" && (
+                <OrderFulfillment
+                  readOnly={demoMode}
+                  onOrderUpdated={refreshSellerFinancials}
+                />
+              )}
 
               {activeTab === "payouts" && (
                 <div className="seller-tab-content">
@@ -1481,11 +1499,27 @@ function SellerDashboard() {
                     <div>
                       <span className="marketplace-eyebrow">AVAILABLE BALANCE</span>
                       <strong>{formatKsh(dashboard?.available_balance ?? 0)}</strong>
-                      <small>Paid and delivered orders not yet allocated to a payout.</small>
+                      <small>
+                        Withdrawable funds from paid, delivered orders not already allocated to a payout.
+                      </small>
                       {(dashboard?.pending_delivery_balance ?? 0) > 0 && (
                         <p className="seller-pending-escrow">
-                          {formatKsh(dashboard.pending_delivery_balance)} is held in escrow until the orders are marked delivered. Check Order Fulfillment after delivery.
+                          {formatKsh(dashboard.pending_delivery_balance)} is held in escrow until the orders are marked delivered.
                         </p>
+                      )}
+                      {(dashboard?.available_balance ?? 0) < 1 && (
+                        <div className="seller-balance-help">
+                          <p>
+                            No funds are available to withdraw yet. Check paid orders below; after delivery is confirmed, return here to see the released balance.
+                          </p>
+                          <button
+                            type="button"
+                            className="marketplace-button secondary"
+                            onClick={() => setActiveTab("orders")}
+                          >
+                            Review order fulfillment <ArrowRight size={14} />
+                          </button>
+                        </div>
                       )}
                     </div>
                     <div className="seller-payout-action">

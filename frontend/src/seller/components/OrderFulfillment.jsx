@@ -38,7 +38,7 @@ const NEXT_STATUS = {
   OUT_FOR_DELIVERY: ["DELIVERED_TO_CUSTOMER", "Mark delivered"],
 };
 
-function OrderFulfillment({ readOnly = false }) {
+function OrderFulfillment({ readOnly = false, onOrderUpdated = async () => {} }) {
   const [orders, setOrders] = useState([]);
   const [dispatch, setDispatch] = useState({});
   const [nextStatuses, setNextStatuses] = useState({});
@@ -106,6 +106,7 @@ function OrderFulfillment({ readOnly = false }) {
       await updateSellerFulfillment(order.id, targetStatus, fields);
       setNotice(`${order.order_number} updated to ${STATUS_LABELS[targetStatus]}.`);
       await refresh();
+      await onOrderUpdated();
     } catch (updateError) {
       setError(updateError.message);
     } finally {
