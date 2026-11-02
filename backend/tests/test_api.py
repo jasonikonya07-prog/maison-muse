@@ -1118,6 +1118,11 @@ class StoreApiTests(unittest.TestCase):
         self.assertTrue(inspection.json()["is_verified"])
         self.assertEqual(inspection.json()["fulfillment_rate"], 100)
         self.assertEqual(inspection.json()["reviews"][0]["comment"], "Arrived carefully packed.")
+        inspection_by_id = self.client.get(
+            "/api/sellers/inspect", params={"query": str(seller["id"])}
+        )
+        self.assertEqual(inspection_by_id.status_code, 200, inspection_by_id.text)
+        self.assertEqual(inspection_by_id.json()["id"], seller["id"])
 
     def test_seller_development_approval_is_gated_and_synchronizes_profiles(self) -> None:
         seller = self.register_seller(self.client, "Saffron Studio")

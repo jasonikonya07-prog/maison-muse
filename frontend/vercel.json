@@ -5,6 +5,10 @@
       "destination": "https://maison-muse.onrender.com/api/admin/:path*"
     },
     {
+      "source": "/api/:path*",
+      "destination": "https://maison-muse.onrender.com/api/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

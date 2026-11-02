@@ -142,7 +142,7 @@ def inspect_seller(query: str = Query(min_length=1, max_length=120)) -> dict:
             FROM sellers s
             JOIN users u ON u.id = s.user_id
             LEFT JOIN seller_profiles sp ON sp.seller_id = s.id
-            WHERE (CAST(s.id AS TEXT) = ? AND ? GLOB '[0-9]*')
+            WHERE CAST(s.id AS TEXT) = ?
                OR s.store_name = ? COLLATE NOCASE
                OR s.store_slug = ? COLLATE NOCASE
                OR s.store_name LIKE ? COLLATE NOCASE
@@ -154,7 +154,6 @@ def inspect_seller(query: str = Query(min_length=1, max_length=120)) -> dict:
             LIMIT 1
             """,
             (
-                normalized_query,
                 normalized_query,
                 normalized_query,
                 normalized_query,
