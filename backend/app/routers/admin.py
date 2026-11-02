@@ -49,6 +49,11 @@ from app.schemas import (
     SellerStatusUpdate,
     StoreSettingsUpdate,
 )
+from app.seller_portal import (
+    ENABLED_SETTING,
+    REASON_SETTING,
+    get_seller_portal_maintenance,
+)
 
 
 router = APIRouter()
@@ -232,6 +237,7 @@ def marketplace_management(request: Request) -> dict:
             ORDER BY o.created_at
             """
         ).fetchall()
+        seller_portal_maintenance = get_seller_portal_maintenance(connection)
     payable_by_seller: dict[int, list[dict]] = {}
     for row in payable_rows:
         payable_by_seller.setdefault(row["seller_id"], []).append(
@@ -251,10 +257,62 @@ def marketplace_management(request: Request) -> dict:
         serialized_vendors.append(vendor)
     return {
         "vendors": serialized_vendors,
+        "seller_portal_maintenance_enabled": seller_portal_maintenance["enabled"],
+        "seller_portal_maintenance_reason": seller_portal_maintenance["reason"],
         "total_commissions": round(totals, 2),
         "pending_payouts": round(sum(row["pending_payout"] for row in vendors), 2),
         "payout_transactions": [dict(row) for row in payout_rows],
     }
+
+
+@router.patch("/marketplace/seller-portal-maintenance")
+def update_seller_portal_maintenance(
+    update: SellerMaintenanceUpdate, request: Request
+) -> dict:
+    username = _authorize(request, "settings", "write")
+    _verify_admin_write(request)
+    enabled = "true" if update.enabled else "false"
+    reason = update.reason.strip() if update.enabled else ""
+    with get_connection() as connection:
+        previous = get_seller_portal_maintenance(connection)
+        connection.execute(
+            """
+            INSERT INTO store_settings (key, value) VALUES (?, ?)
+            ON CONFLICT(key) DO UPDATE SET value = excluded.value
+            """,
+            (ENABLED_SETTING, enabled),
+        )
+        connection.execute(
+            """
+            INSERT INTO store_settings (key, value) VALUES (?, ?)
+            ON CONFLICT(key) DO UPDATE SET value = excluded.value
+            """,
+            (REASON_SETTING, reason),
+        )
+        _audit(
+            connection,
+            request,
+            "Marketplace",
+            (
+                "SELLER_PORTAL_MAINTENANCE_ENABLED"
+                if update.enabled
+                else "SELLER_PORTAL_MAINTENANCE_DISABLED"
+            ),
+            (
+                "Placed the entire Seller Portal under maintenance."
+                if update.enabled
+                else "Restored access to the entire Seller Portal."
+            ),
+            severity="WARNING" if update.enabled else "INFO",
+            details={
+                "before_enabled": previous["enabled"],
+                "enabled": update.enabled,
+                "reason": reason,
+                "admin": username,
+            },
+        )
+        connection.commit()
+    return {"enabled": update.enabled, "reason": reason}
 
 
 @router.patch("/marketplace/vendors/{seller_id}/maintenance")

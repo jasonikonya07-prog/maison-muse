@@ -39,6 +39,7 @@ import {
   deleteSellerProduct,
   fetchSellerDashboard,
   fetchSellerMe,
+  fetchSellerPortalStatus,
   fetchSellerOrders,
   fetchSellerPayouts,
   fetchSellerProducts,
@@ -388,6 +389,8 @@ function downloadMonthlyEarningsReport(seller, orders) {
 function SellerDashboard() {
   const [seller, setSeller] = useState(null);
   const [checking, setChecking] = useState(true);
+  const [portalMaintenance, setPortalMaintenance] = useState(null);
+  const [portalStatusError, setPortalStatusError] = useState("");
   const [demoMode, setDemoMode] = useState(false);
   const [activeTab, setActiveTab] = useState(() => {
     try {
@@ -475,15 +478,41 @@ function SellerDashboard() {
 
   useEffect(() => {
     let active = true;
-    fetchSellerMe()
-      .then(async (profile) => {
+    let portalStatusLoaded = false;
+    const loadPortal = async () => {
+      try {
+        const status = await fetchSellerPortalStatus();
+        portalStatusLoaded = true;
+        if (!active) return;
+        setPortalStatusError("");
+        if (status.enabled) {
+          setPortalMaintenance(status);
+          return;
+        }
+        setPortalMaintenance(null);
+        const profile = await fetchSellerMe();
         if (active) {
           setDemoMode(false);
           await loadSellerData(profile);
         }
-      })
-      .catch((loadError) => {
+      } catch (loadError) {
         if (!active) return;
+        if (!portalStatusLoaded) {
+          setPortalStatusError(loadError.message);
+          return;
+        }
+        if (loadError.status === 503) {
+          try {
+            const status = await fetchSellerPortalStatus();
+            if (status.enabled) {
+              setPortalMaintenance(status);
+              return;
+            }
+          } catch (statusError) {
+            setPortalStatusError(statusError.message);
+            return;
+          }
+        }
         setDemoMode(true);
         setSeller(DEMO_SELLER);
         setDashboard(DEMO_METRICS);
@@ -519,12 +548,32 @@ function SellerDashboard() {
           payout_account: DEMO_SELLER.payout_account,
         });
         if (loadError.status !== 401) setError(loadError.message);
-      })
-      .finally(() => {
+      } finally {
         if (active) setChecking(false);
-      });
+      }
+    };
+    void loadPortal();
     return () => { active = false; };
   }, [loadSellerData]);
+
+  useEffect(() => {
+    let active = true;
+    const checkPortalMaintenance = async () => {
+      try {
+        const status = await fetchSellerPortalStatus();
+        if (!active) return;
+        setPortalStatusError("");
+        setPortalMaintenance(status.enabled ? status : null);
+      } catch (statusError) {
+        if (active) setPortalStatusError(statusError.message);
+      }
+    };
+    const intervalId = window.setInterval(checkPortalMaintenance, 5000);
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+    };
+  }, []);
 
   useEffect(() => {
     if (demoMode || seller?.status !== "APPROVED") return undefined;
@@ -920,6 +969,35 @@ function SellerDashboard() {
   };
 
   if (checking) return <main className="seller-auth-screen"><p>Preparing your seller portal…</p></main>;
+  if (portalStatusError) {
+    return (
+      <main className="seller-suspension-screen">
+        <section className="seller-suspension-card" role="alert">
+          <span className="marketplace-eyebrow">SELLER ACCOUNT ACCESS</span>
+          <h1>Seller Portal availability could not be checked</h1>
+          <p>{portalStatusError}</p>
+          <button type="button" className="marketplace-button secondary" onClick={() => window.location.reload()}>Try again</button>
+        </section>
+      </main>
+    );
+  }
+  if (portalMaintenance?.enabled) {
+    return (
+      <main className="seller-suspension-screen">
+        <header className="seller-topbar">
+          <Link className="marketplace-brand" to="/">maison <span>muse.</span></Link>
+        </header>
+        <section className="seller-suspension-card" role="status">
+          <span className="seller-suspension-icon"><Store size={25} /></span>
+          <span className="marketplace-eyebrow">SELLER PORTAL ACCESS</span>
+          <h1>Seller Studio is temporarily unavailable</h1>
+          <p>Maison Muse has temporarily paused access for all sellers while platform maintenance is in progress.</p>
+          {portalMaintenance.reason && <div className="seller-suspension-reason"><strong>Maintenance notice</strong><p>{portalMaintenance.reason}</p></div>}
+          <Link className="marketplace-button secondary" to="/">Return to storefront</Link>
+        </section>
+      </main>
+    );
+  }
   if (!seller) {
     return (
       <main className="seller-auth-screen">

@@ -206,6 +206,8 @@ export const loginWithGoogleDemo = () =>
 
 export const registerSeller = (details) =>
   sellerRequest("/register", { method: "POST", body: details });
+export const fetchSellerPortalStatus = () =>
+  publicApiRequest("/api/seller/portal-status", "Could not check Seller Portal availability.");
 export const sellerLogin = (email, password) =>
   sellerRequest("/login", { method: "POST", body: { email, password } });
 export const sellerLogout = () => sellerRequest("/logout", { method: "POST" });
@@ -678,6 +680,11 @@ export const updateMarketplaceVendor = (id, status) =>
   adminRequest(`/marketplace/vendors/${id}`, { method: "PATCH", body: { status } });
 export const updateMarketplaceVendorMaintenance = (id, maintenance) =>
   adminRequest(`/marketplace/vendors/${encodeURIComponent(id)}/maintenance`, {
+    method: "PATCH",
+    body: maintenance,
+  });
+export const updateSellerPortalMaintenance = (maintenance) =>
+  adminRequest("/marketplace/seller-portal-maintenance", {
     method: "PATCH",
     body: maintenance,
   });

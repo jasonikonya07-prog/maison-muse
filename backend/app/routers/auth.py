@@ -16,6 +16,7 @@ from app.auth_security import (
 )
 from app.config import auto_approve_seller_registrations_enabled
 from app.database import get_connection
+from app.seller_portal import ensure_seller_portal_open
 from app.schemas import AuthLogin, AuthRegistration, GoogleAuthInput
 
 
@@ -109,6 +110,8 @@ def _store_slug(store_name: str, user_id: int, connection: sqlite3.Connection) -
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register_user(registration: AuthRegistration) -> dict:
     ensure_jwt_configured()
+    if registration.role == "seller":
+        ensure_seller_portal_open()
     if registration.role == "seller" and (
         not registration.store_name or not registration.payout_number
     ):
@@ -247,6 +250,8 @@ def login_user(credentials: AuthLogin, request: Request) -> dict:
             credentials.password, user["password_hash"]
         )
         if valid:
+            if user["role"] == "seller":
+                ensure_seller_portal_open(connection)
             _record_user_login(connection, user["id"], "password", now.isoformat())
         connection.execute(
             """

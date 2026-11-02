@@ -38,6 +38,7 @@ from app.order_tracking import (
     status_timeline,
 )
 from app.routers.products import expire_seller_promotions, serialize_product
+from app.seller_portal import ensure_seller_portal_open, get_seller_portal_maintenance
 from app.schemas import (
     AGRICULTURE_BUSINESS_TYPE,
     AGRICULTURE_PRODUCT_CATEGORIES,
@@ -161,6 +162,7 @@ def require_seller(
     approved: bool = False,
     allow_suspended: bool = False,
 ) -> sqlite3.Row:
+    ensure_seller_portal_open()
     authorization = request.headers.get("authorization", "")
     scheme, _, access_token = authorization.partition(" ")
     if scheme.casefold() == "bearer" and access_token:
@@ -275,6 +277,7 @@ def _seller_product_payload(
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register_seller(application: SellerRegistration, request: Request, response: Response) -> dict:
     _verify_seller_write(request)
+    ensure_seller_portal_open()
     slug_base = re.sub(r"[^a-z0-9]+", "-", application.store_name.casefold()).strip("-")
     seller_status = (
         "APPROVED" if auto_approve_seller_registrations_enabled() else "PENDING"
@@ -369,6 +372,7 @@ def register_seller(application: SellerRegistration, request: Request, response:
 @router.post("/login")
 def login_seller(credentials: SellerLogin, request: Request, response: Response) -> dict:
     _verify_seller_write(request)
+    ensure_seller_portal_open()
     ip_address = request.client.host if request.client else "unknown"
     now = datetime.now(timezone.utc)
     cutoff = (now - timedelta(minutes=15)).isoformat()
@@ -428,6 +432,11 @@ def logout_seller(request: Request, response: Response) -> dict:
             connection.commit()
     response.delete_cookie(SELLER_COOKIE_NAME, path="/", samesite="lax")
     return {"signed_out": True}
+
+
+@router.get("/portal-status")
+def seller_portal_status() -> dict:
+    return get_seller_portal_maintenance()
 
 
 @router.get("/me")

@@ -510,7 +510,6 @@ class StoreApiTests(unittest.TestCase):
             "role": "seller",
             "phone": "+254700000000",
             "store_name": "Taylor Beauty",
-            "store_category": "Skincare & Glow",
             "business_type": "Beauty & Personal Care Cosmetics",
             "city": "Nairobi",
             "payout_number": "254700000000",
@@ -1804,10 +1803,7 @@ class StoreApiTests(unittest.TestCase):
 
         product = self.client.post(
             "/api/seller/products",
-            headers={
-                **self.seller_write_headers,
-                "Authorization": f"Bearer {seller['access_token']}",
-            },
+            headers=self.seller_write_headers,
             json={
                 "name": "Cedar Face Oil",
                 "brand": "Cedar Rose Boutique",
@@ -1854,12 +1850,14 @@ class StoreApiTests(unittest.TestCase):
         )
         store = self.client.get(f"/api/sellers/stores/{seller['store_slug']}")
         self.assertEqual(store.status_code, 404, store.text)
-        blocked = self.client.get(
-            "/api/seller/dashboard",
-            headers={"Authorization": f"Bearer {seller['access_token']}"},
+        blocked = self.client.delete(
+            f"/api/seller/products/{product.json()['id']}",
+            headers=self.seller_write_headers,
         )
         self.assertEqual(blocked.status_code, 403, blocked.text)
         self.assertIn("Compliance review in progress.", blocked.json()["detail"])
+        dashboard = self.client.get("/api/seller/dashboard")
+        self.assertEqual(dashboard.status_code, 200, dashboard.text)
 
         ended = self.client.patch(
             f"/api/admin/marketplace/vendors/{seller['id']}/maintenance",
@@ -1872,7 +1870,7 @@ class StoreApiTests(unittest.TestCase):
             product.json()["id"],
             {item["id"] for item in self.client.get("/api/products").json()},
         )
-        with sqlite3.connect(self.database_path) as connection:
+        with closing(sqlite3.connect(self.database_path)) as connection:
             audit_events = {
                 row[0]
                 for row in connection.execute(
@@ -1888,6 +1886,119 @@ class StoreApiTests(unittest.TestCase):
         self.assertEqual(
             audit_events,
             {"VENDOR_MAINTENANCE_ENABLED", "VENDOR_MAINTENANCE_ENDED"},
+        )
+
+    def test_global_seller_portal_maintenance_blocks_all_seller_access(self) -> None:
+        seller = self.register_seller(self.client, "Global Portal Boutique")
+        self.login_admin()
+
+        invalid = self.client.patch(
+            "/api/admin/marketplace/seller-portal-maintenance",
+            headers=self.admin_write_headers,
+            json={"enabled": True, "reason": "  "},
+        )
+        self.assertEqual(invalid.status_code, 422, invalid.text)
+        enabled = self.client.patch(
+            "/api/admin/marketplace/seller-portal-maintenance",
+            headers=self.admin_write_headers,
+            json={"enabled": True, "reason": "Platform upgrade in progress."},
+        )
+        self.assertEqual(enabled.status_code, 200, enabled.text)
+        self.assertEqual(
+            enabled.json(),
+            {"enabled": True, "reason": "Platform upgrade in progress."},
+        )
+        self.assertEqual(
+            self.client.get("/api/seller/portal-status").json(),
+            {"enabled": True, "reason": "Platform upgrade in progress."},
+        )
+
+        profile = self.client.get("/api/seller/me")
+        self.assertEqual(profile.status_code, 503, profile.text)
+        self.assertIn("Platform upgrade in progress.", profile.json()["detail"])
+        seller_login = self.client.post(
+            "/api/seller/login",
+            headers=self.seller_write_headers,
+            json={"email": seller["email"], "password": "correct-horse-battery"},
+        )
+        self.assertEqual(seller_login.status_code, 503, seller_login.text)
+        auth_login = self.client.post(
+            "/api/auth/login",
+            json={"email": seller["email"], "password": "correct-horse-battery"},
+        )
+        self.assertEqual(auth_login.status_code, 503, auth_login.text)
+        seller_registration = self.client.post(
+            "/api/auth/register",
+            json={
+                "full_name": "New Seller",
+                "email": "new-maintenance-seller@example.com",
+                "password": "another-secure-password",
+                "role": "seller",
+                "phone": "+254700000004",
+                "store_name": "New Store",
+                "business_type": "Beauty & Personal Care Cosmetics",
+                "business_category": "Skincare & Glow",
+                "city": "Nairobi",
+                "payout_number": "254700000004",
+                "national_id": "PVT-2026-0042",
+                "accepted_terms": True,
+                "selected_plan": "boutique",
+            },
+        )
+        self.assertEqual(seller_registration.status_code, 503, seller_registration.text)
+        seller_portal_registration = self.client.post(
+            "/api/seller/register",
+            headers=self.seller_write_headers,
+            json={
+                "email": "new-portal-seller@example.com",
+                "password": "another-secure-password",
+                "store_name": "New Portal Store",
+                "owner_name": "New Seller",
+                "business_type": "Beauty & Personal Care Cosmetics",
+                "business_category": "Skincare & Glow",
+                "logo_url": "",
+                "banner_url": "",
+                "business_phone": "+254700000005",
+                "payout_method": "M-Pesa",
+                "payout_account": "254700000005",
+                "submitted_documents": [],
+            },
+        )
+        self.assertEqual(
+            seller_portal_registration.status_code, 503, seller_portal_registration.text
+        )
+
+        admin_marketplace = self.client.get("/api/admin/marketplace")
+        self.assertEqual(admin_marketplace.status_code, 200, admin_marketplace.text)
+        self.assertTrue(admin_marketplace.json()["seller_portal_maintenance_enabled"])
+
+        disabled = self.client.patch(
+            "/api/admin/marketplace/seller-portal-maintenance",
+            headers=self.admin_write_headers,
+            json={"enabled": False},
+        )
+        self.assertEqual(disabled.status_code, 200, disabled.text)
+        self.assertEqual(disabled.json(), {"enabled": False, "reason": ""})
+        self.assertEqual(self.client.get("/api/seller/me").status_code, 200)
+        with closing(sqlite3.connect(self.database_path)) as connection:
+            audit_events = {
+                row[0]
+                for row in connection.execute(
+                    """
+                    SELECT event_type FROM admin_audit_logs
+                    WHERE event_type IN (
+                        'SELLER_PORTAL_MAINTENANCE_ENABLED',
+                        'SELLER_PORTAL_MAINTENANCE_DISABLED'
+                    )
+                    """
+                )
+            }
+        self.assertEqual(
+            audit_events,
+            {
+                "SELLER_PORTAL_MAINTENANCE_ENABLED",
+                "SELLER_PORTAL_MAINTENANCE_DISABLED",
+            },
         )
 
     def test_seller_review_commission_policy_dispute_and_audit(self) -> None:

@@ -8,6 +8,7 @@ import {
   reviewMarketplaceVendor,
   updateMarketplaceVendor,
   updateMarketplaceVendorMaintenance,
+  updateSellerPortalMaintenance,
 } from "../../services/api.js";
 import "../../seller/Marketplace.css";
 
@@ -42,6 +43,8 @@ function VendorManager() {
   const [reviewReason, setReviewReason] = useState("");
   const [maintenanceTarget, setMaintenanceTarget] = useState(null);
   const [maintenanceReason, setMaintenanceReason] = useState("");
+  const [portalMaintenanceDialog, setPortalMaintenanceDialog] = useState(false);
+  const [portalMaintenanceReason, setPortalMaintenanceReason] = useState("");
   const [warningTarget, setWarningTarget] = useState(null);
   const [warningSummary, setWarningSummary] = useState("");
   const [warningReference, setWarningReference] = useState("");
@@ -125,6 +128,29 @@ function VendorManager() {
     setError("");
   };
 
+  const changePortalMaintenance = async () => {
+    const enabled = !data.seller_portal_maintenance_enabled;
+    if (enabled && portalMaintenanceReason.trim().length < 3) {
+      setError("Enter a reason of at least 3 characters before enabling portal maintenance.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      await updateSellerPortalMaintenance({
+        enabled,
+        reason: enabled ? portalMaintenanceReason.trim() : "",
+      });
+      setPortalMaintenanceDialog(false);
+      setPortalMaintenanceReason("");
+      await refresh();
+    } catch (updateError) {
+      setError(updateError.message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const openReview = (vendor, action) => {
     setReviewTarget(vendor);
     setReviewAction(action);
@@ -198,6 +224,31 @@ function VendorManager() {
         <button type="button" className="marketplace-button secondary" onClick={refresh}><RefreshCw size={15} /> Refresh</button>
       </header>
       {error && <p className="marketplace-error" role="alert">{error}</p>}
+      <section className="vendor-manager-panel">
+        <header className="vendor-governance-toolbar">
+          <div>
+            <span className="marketplace-eyebrow">GLOBAL ACCESS CONTROL</span>
+            <h2>Seller Portal maintenance</h2>
+            <p>{data.seller_portal_maintenance_enabled
+              ? "All sellers are blocked from Seller Studio."
+              : "Seller Studio is available to sellers."}</p>
+            {data.seller_portal_maintenance_enabled && data.seller_portal_maintenance_reason && (
+              <p><strong>Reason:</strong> {data.seller_portal_maintenance_reason}</p>
+            )}
+          </div>
+          <button
+            type="button"
+            className={`marketplace-button ${data.seller_portal_maintenance_enabled ? "primary" : "secondary"}`}
+            disabled={busy}
+            onClick={() => {
+              setPortalMaintenanceReason("");
+              setPortalMaintenanceDialog(true);
+            }}
+          >
+            {data.seller_portal_maintenance_enabled ? "Restore seller access" : "Put Seller Portal under maintenance"}
+          </button>
+        </header>
+      </section>
       <section className="vendor-summary-grid">
         <article><span><Store size={17} /></span><small>Active sellers</small><strong>{activeCount}</strong></article>
         <article><span><ShieldAlert size={17} /></span><small>Pending applications</small><strong>{pendingCount}</strong></article>
@@ -251,6 +302,17 @@ function VendorManager() {
           })}
         </div> : <p className="marketplace-empty">No sellers match this filter.</p>}
       </section>
+      {portalMaintenanceDialog && <div className="marketplace-modal-backdrop" onMouseDown={() => !busy && setPortalMaintenanceDialog(false)}>
+        <section className="marketplace-modal vendor-review-modal" role="dialog" aria-modal="true" aria-labelledby="seller-portal-maintenance-title" onMouseDown={(event) => event.stopPropagation()}>
+          <header><div><span className="marketplace-eyebrow">GLOBAL SELLER ACCESS</span><h2 id="seller-portal-maintenance-title">{data.seller_portal_maintenance_enabled ? "Restore Seller Portal access" : "Put all sellers under maintenance"}</h2></div></header>
+          {data.seller_portal_maintenance_enabled
+            ? <p>This will allow all sellers to sign in and use Seller Studio again.</p>
+            : <><p>This blocks every seller from signing in, registering, and using Seller Studio APIs. The Super Admin dashboard remains available.</p>
+              <label className="marketplace-review-reason">Reason for maintenance<textarea autoFocus required minLength="3" rows="4" maxLength="1000" value={portalMaintenanceReason} onChange={(event) => setPortalMaintenanceReason(event.target.value)} placeholder="For example: scheduled platform maintenance." /></label></>}
+          {error && <p className="marketplace-error" role="alert">{error}</p>}
+          <footer><button type="button" className="marketplace-button secondary" disabled={busy} onClick={() => setPortalMaintenanceDialog(false)}>Cancel</button><button type="button" className="marketplace-button primary" disabled={busy || (!data.seller_portal_maintenance_enabled && portalMaintenanceReason.trim().length < 3)} onClick={changePortalMaintenance}>{busy ? "Saving…" : data.seller_portal_maintenance_enabled ? "Restore seller access" : "Block all sellers"}</button></footer>
+        </section>
+      </div>}
       {maintenanceTarget && <div className="marketplace-modal-backdrop" onMouseDown={() => !busy && setMaintenanceTarget(null)}>
         <section className="marketplace-modal vendor-review-modal" role="dialog" aria-modal="true" aria-labelledby="seller-maintenance-title" onMouseDown={(event) => event.stopPropagation()}>
           <header><div><span className="marketplace-eyebrow">SELLER OPERATIONS</span><h2 id="seller-maintenance-title">{maintenanceTarget.maintenance_mode ? "End seller maintenance" : "Place seller under maintenance"}</h2></div></header>

@@ -24,8 +24,14 @@ py -m venv .venv
 python -m pip install -r requirements.txt
 Copy-Item .env.example .env
 # Set AUTH_JWT_SECRET in .env to a unique random value of at least 32 characters.
+# Generate a Fernet key with this virtual environment's Python, then set DATA_ENCRYPTION_KEY in .env:
+python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
 python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
+
+Keep `DATA_ENCRYPTION_KEY` private and backed up. If this API connects to the
+same encrypted database in multiple environments, configure the same key in
+each environment; losing or changing it makes encrypted values unreadable.
 
 The API is available at `http://127.0.0.1:8000`. Interactive API
 documentation is at `http://127.0.0.1:8000/docs`.
@@ -53,6 +59,10 @@ root `render.yaml`.
    settings before applying. It deploys `maison-muse-api` from `backend/`,
    installs `backend/requirements.txt`, runs Uvicorn on Render's assigned port,
    and checks `/api/health`.
+   If an existing service reports that `requirements.txt` is missing, set its
+   **Root Directory** to `backend` (or recreate it from the repository
+   Blueprint); the build command `pip install -r requirements.txt` is relative
+   to that directory.
 4. Add the prompted secret values in Render. Set `DATABASE_URL` to the URL with
    the rotated password and `CORS_ORIGINS` to the exact Vercel production
    origin(s), comma-separated and without trailing slashes. Add a strong unique
@@ -102,7 +112,10 @@ belong only in Render's `DATABASE_URL` secret.
 - `GET /api/auth/me` — returns the profile for a valid bearer token.
 - `POST /api/seller/register` and `POST /api/seller/login` — create a seller
   application or start an HttpOnly seller session. Registration accepts HTTPS
-  logo/banner image URLs and M-Pesa or bank payout details.
+  logo/banner image URLs and M-Pesa or bank payout details. Both, as well as
+  seller-authenticated APIs, are blocked while global Seller Portal maintenance
+  is enabled.
+- `GET /api/seller/portal-status` — public Seller Portal maintenance notice.
 - `GET /api/seller/me` and `GET /api/seller/dashboard` — return the signed-in
   seller profile and analytics. Seller product and order operations are scoped
   to the signed-in seller; inventory and fulfillment writes require an approved
@@ -111,6 +124,8 @@ belong only in Render's `DATABASE_URL` secret.
   catalog for the `/store/{store_slug}` storefront page.
 - `GET /api/admin/marketplace` — administrator marketplace verification queue,
   earned commissions, pending eligible payouts, and payout ledger.
+- `PATCH /api/admin/marketplace/seller-portal-maintenance` — globally block or
+  restore seller access to Seller Studio; admin access remains available.
 - `PATCH /api/admin/marketplace/vendors/{seller_id}` — approve, reject
   (suspend), or suspend a seller application.
 - `POST /api/admin/marketplace/vendors/{seller_id}/review` — approve, reject
