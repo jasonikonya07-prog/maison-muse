@@ -259,6 +259,7 @@ def _seller_product_payload(
         "stock": product.stock,
         "low_stock_threshold": product.lowStockThreshold,
         "image": images[0],
+        "image_url": images[0],
         "gallery_json": json.dumps(images),
         "tags_json": json.dumps(product.tags),
         "variants_json": json.dumps(
@@ -1300,14 +1301,14 @@ def create_seller_product(product: SellerProductInput, request: Request) -> dict
                 """
                 INSERT INTO products (
                     id, name, brand, sku, category, detail, description, price,
-                    stock, low_stock_threshold, image, gallery_json, seller_id,
-                    tags_json, variants_json, product_status, active, qc_status,
+                    stock, low_stock_threshold, image, image_url, gallery_json,
+                    seller_id, tags_json, variants_json, product_status, active, qc_status,
                     is_agri_product, farmer_name, farmer_whatsapp,
                     seller_whatsapp_phone
                 ) VALUES (
                     :id, :name, :brand, :sku, :category, :detail, :description, :price,
-                    :stock, :low_stock_threshold, :image, :gallery_json, :seller_id,
-                    :tags_json, :variants_json, :product_status, :active, :qc_status,
+                    :stock, :low_stock_threshold, :image, :image_url, :gallery_json,
+                    :seller_id, :tags_json, :variants_json, :product_status, :active, :qc_status,
                     :is_agri_product, :farmer_name, :farmer_whatsapp,
                     :seller_whatsapp_phone
                 )
@@ -1353,7 +1354,8 @@ def update_seller_product(
                     name = :name, brand = :brand, sku = :sku, category = :category,
                     detail = :detail, description = :description, price = :price,
                     stock = :stock, low_stock_threshold = :low_stock_threshold,
-                    image = :image, gallery_json = :gallery_json,
+                    image = :image, image_url = :image_url,
+                    gallery_json = :gallery_json,
                     tags_json = :tags_json, variants_json = :variants_json,
                     product_status = :product_status, active = :active,
                     is_agri_product = :is_agri_product,
