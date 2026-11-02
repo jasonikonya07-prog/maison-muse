@@ -132,6 +132,24 @@ class PostgresCompatibilityTests(unittest.TestCase):
             self.assertEqual(encrypt_value(""), "")
         _fernet_for_key.cache_clear()
 
+    def test_postgres_row_decrypts_sensitive_seller_contact_aliases(self) -> None:
+        key = "zB5k-3YxYqBUh5Vwx6rmmttjZeox8K0h36YG49hhMtQ="
+        _fernet_for_key.cache_clear()
+        with patch.dict(os.environ, {"DATA_ENCRYPTION_KEY": key}):
+            encrypted_phone = encrypt_value("+254711111111")
+            encrypted_whatsapp = encrypt_value("+254722222222")
+            row = PostgresRow(
+                {
+                    "linked_seller_phone": encrypted_phone,
+                    "linked_seller_whatsapp_phone": encrypted_whatsapp,
+                    "linked_farmer_whatsapp_number": encrypted_whatsapp,
+                }
+            )
+            self.assertEqual(row["linked_seller_phone"], "+254711111111")
+            self.assertEqual(row["linked_seller_whatsapp_phone"], "+254722222222")
+            self.assertEqual(row["linked_farmer_whatsapp_number"], "+254722222222")
+        _fernet_for_key.cache_clear()
+
     def test_sensitive_insert_parameters_are_encrypted_by_column(self) -> None:
         key = "zB5k-3YxYqBUh5Vwx6rmmttjZeox8K0h36YG49hhMtQ="
         _fernet_for_key.cache_clear()

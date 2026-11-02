@@ -29,6 +29,9 @@ SENSITIVE_COLUMNS_BY_TABLE = {
 SENSITIVE_RESULT_COLUMNS = set().union(*SENSITIVE_COLUMNS_BY_TABLE.values()) | {
     "phone",
     "address",
+    "linked_seller_phone",
+    "linked_seller_whatsapp_phone",
+    "linked_farmer_whatsapp_number",
 }
 
 _INSERT_PATTERN = re.compile(
