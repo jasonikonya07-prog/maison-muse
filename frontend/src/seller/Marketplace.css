@@ -2523,6 +2523,167 @@
   text-decoration: none;
 }
 
+.seller-layout {
+  width: min(1680px, 100%);
+  grid-template-columns: minmax(230px, 252px) minmax(0, 1fr);
+  gap: clamp(16px, 2vw, 28px);
+  padding: 24px clamp(18px, 2vw, 32px) 48px;
+}
+
+.seller-sidebar {
+  top: 88px;
+  height: calc(100dvh - 112px);
+  min-height: 0;
+  max-height: none;
+  gap: 16px;
+  padding: 16px 12px;
+}
+
+.seller-sidebar nav {
+  flex: 1;
+  align-content: start;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.seller-sidebar nav button {
+  min-width: 0;
+}
+
+.seller-sidebar nav button span {
+  min-width: 0;
+  line-height: 1.35;
+}
+
+.seller-mobile-menu,
+.seller-mobile-scrim {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .seller-mobile-menu {
+    width: 38px;
+    height: 38px;
+    display: grid;
+    flex: 0 0 auto;
+    place-items: center;
+    border: 1px solid #e8e2df;
+    border-radius: 8px;
+    background: #fff;
+    color: #745c5b;
+    cursor: pointer;
+  }
+
+  .seller-topbar {
+    position: sticky;
+    z-index: 40;
+    min-height: 64px;
+    gap: 12px;
+    padding: 10px 18px;
+  }
+
+  .seller-layout {
+    display: block;
+    width: 100%;
+    min-height: calc(100dvh - 64px);
+    padding: 22px clamp(16px, 3vw, 28px) 42px;
+  }
+
+  .seller-sidebar {
+    position: fixed;
+    z-index: 51;
+    inset: 64px auto 0 0;
+    width: min(300px, calc(100vw - 48px));
+    height: auto;
+    max-height: none;
+    min-height: 0;
+    gap: 16px;
+    overflow: hidden;
+    border: 0;
+    border-right: 1px solid #e8e5e3;
+    border-radius: 0;
+    padding: 18px 14px max(18px, env(safe-area-inset-bottom));
+    box-shadow: 16px 0 40px rgb(52 39 36 / 10%);
+    transform: translateX(-105%);
+    visibility: hidden;
+    transition: transform 180ms ease, visibility 180ms ease;
+  }
+
+  .seller-sidebar.is-open {
+    transform: translateX(0);
+    visibility: visible;
+  }
+
+  .seller-sidebar-store {
+    display: flex;
+  }
+
+  .seller-sidebar nav {
+    display: grid;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  .seller-sidebar nav button {
+    flex: initial;
+  }
+
+  .seller-sidebar-link {
+    display: block;
+  }
+
+  .seller-mobile-scrim {
+    position: fixed;
+    z-index: 50;
+    inset: 64px 0 0;
+    display: block;
+    border: 0;
+    background: rgb(30 27 29 / 38%);
+  }
+}
+
+@media (max-width: 600px) {
+  .seller-topbar {
+    gap: 9px;
+    padding-inline: 12px;
+  }
+
+  .seller-topbar .marketplace-brand {
+    font-size: 20px;
+  }
+
+  .seller-topbar-actions {
+    gap: 6px;
+  }
+
+  .seller-topbar-actions .marketplace-button {
+    min-height: 36px;
+    gap: 5px;
+    padding-inline: 9px;
+    font-size: 11px;
+  }
+
+  .seller-layout {
+    padding: 18px 12px 32px;
+  }
+
+  .seller-welcome {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .seller-welcome > .marketplace-button {
+    align-self: flex-start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .seller-sidebar {
+    transition: none;
+  }
+}
+
 .product-seller-contact a:hover {
   text-decoration: underline;
 }

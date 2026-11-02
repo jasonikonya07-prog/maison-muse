@@ -26,6 +26,7 @@ import {
   RefreshCw,
   Mail,
   Lightbulb,
+  Menu,
 } from "lucide-react";
 import { formatKsh } from "../data/currency.js";
 import ProductImage from "../components/ProductImage.jsx";
@@ -387,6 +388,7 @@ function downloadMonthlyEarningsReport(seller, orders) {
 }
 
 function SellerDashboard() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [seller, setSeller] = useState(null);
   const [checking, setChecking] = useState(true);
   const [portalMaintenance, setPortalMaintenance] = useState(null);
@@ -428,6 +430,15 @@ function SellerDashboard() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
+
+  useEffect(() => {
+    if (!sidebarOpen) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === "Escape") setSidebarOpen(false);
+    };
+    window.addEventListener("keydown", closeOnEscape);
+    return () => window.removeEventListener("keydown", closeOnEscape);
+  }, [sidebarOpen]);
 
   useEffect(() => {
     try {
@@ -1148,6 +1159,16 @@ function SellerDashboard() {
   return (
     <main className="seller-shell">
       <header className="seller-topbar">
+        <button
+          type="button"
+          className="seller-mobile-menu"
+          aria-label="Open seller navigation"
+          aria-expanded={sidebarOpen}
+          aria-controls="seller-portal-navigation"
+          onClick={() => setSidebarOpen(true)}
+        >
+          <Menu size={19} />
+        </button>
         <Link className="marketplace-brand" to="/">maison <span>muse.</span></Link>
         <div className="seller-topbar-actions">
           {demoMode && <span className="seller-demo-badge">DEMO PREVIEW · READ ONLY</span>}
@@ -1160,7 +1181,19 @@ function SellerDashboard() {
         </div>
       </header>
       <div className="seller-layout">
-        <aside className="seller-sidebar" aria-label="Seller portal navigation">
+        {sidebarOpen && (
+          <button
+            type="button"
+            className="seller-mobile-scrim"
+            aria-label="Close seller navigation"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+        <aside
+          id="seller-portal-navigation"
+          className={`seller-sidebar${sidebarOpen ? " is-open" : ""}`}
+          aria-label="Seller portal navigation"
+        >
           <div className="seller-sidebar-store">
             <span className="seller-store-avatar"><Store size={19} /></span>
             <div><strong>{seller.store_name}</strong><small>{seller.status === "APPROVED" ? "Seller Studio" : "Application"}</small></div>
@@ -1171,7 +1204,10 @@ function SellerDashboard() {
                 type="button"
                 key={id}
                 className={activeTab === id ? "active" : ""}
-                onClick={() => setActiveTab(id)}
+                onClick={() => {
+                  setActiveTab(id);
+                  setSidebarOpen(false);
+                }}
               >
                 <Icon size={17} /> <span>{label}</span>
               </button>
