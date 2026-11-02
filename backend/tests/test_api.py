@@ -1154,10 +1154,11 @@ class StoreApiTests(unittest.TestCase):
         seller = self.register_seller(self.client, "Clover Studio")
         self.login_admin()
         self.approve_seller(seller["id"])
+        original_image = b"\x89PNG\r\n\x1a\nimage-data"
         uploaded = self.client.post(
             "/api/seller/uploads",
             headers=self.seller_write_headers,
-            files={"image": ("logo.png", b"\x89PNG\r\n\x1a\nimage-data", "image/png")},
+            files={"image": ("logo.png", original_image, "image/png")},
         )
         self.assertEqual(uploaded.status_code, 201, uploaded.text)
         uploaded_name = uploaded.json()["url"].rsplit("/", 1)[-1]
@@ -1165,6 +1166,7 @@ class StoreApiTests(unittest.TestCase):
             served = self.client.get(f"/uploads/{uploaded_name}")
             self.assertEqual(served.status_code, 200)
             self.assertEqual(served.headers["content-type"], "image/png")
+            self.assertEqual(served.content, original_image)
             rejected = self.client.post(
                 "/api/seller/uploads",
                 headers=self.seller_write_headers,

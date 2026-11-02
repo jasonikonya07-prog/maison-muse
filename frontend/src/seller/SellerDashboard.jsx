@@ -305,6 +305,14 @@ function ProductEditor({ product, onClose, onSave, onUploadImage, saving }) {
             <label className="marketplace-form-wide">Description<textarea required minLength={10} rows="3" value={form.description} onChange={(event) => update("description", event.target.value)} /></label>
             <label className="marketplace-form-wide">Upload product images from your computer or phone<input type="file" accept="image/jpeg,image/png,image/webp" disabled={saving || uploadingImage} onChange={(event) => { void uploadProductImage(event.target.files?.[0]); event.target.value = ""; }} /></label>
             <label className="marketplace-form-wide">Image URLs (one per line)<textarea required rows="3" value={form.images} onChange={(event) => update("images", event.target.value)} /></label>
+            <div className="marketplace-form-wide seller-image-previews" aria-label="Product image previews">
+              {form.images.split(/\r?\n/).map((image) => image.trim()).filter(Boolean).map((image, index) => (
+                <figure key={`${image}-${index}`}>
+                  <ProductImage src={image} alt={`Product image ${index + 1} preview`} />
+                  <figcaption>Image {index + 1}</figcaption>
+                </figure>
+              ))}
+            </div>
             <label className="marketplace-form-wide">Tags (comma separated)<input value={form.tags} onChange={(event) => update("tags", event.target.value)} placeholder="vegan, best seller, gift" /></label>
             <label className="marketplace-form-wide">Variants (one group per line)<textarea rows="3" value={form.variants} onChange={(event) => update("variants", event.target.value)} placeholder={"Size: 30ml, 50ml, 100ml\nShape: Almond, Coffin, Short Square"} /></label>
           </div>
