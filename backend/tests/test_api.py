@@ -753,13 +753,23 @@ class StoreApiTests(unittest.TestCase):
                 "price": 1800,
                 "stock": 8,
                 "lowStockThreshold": 2,
-                "images": ["https://images.example/rose.jpg"],
+                "images": [
+                    "https://images.example/rose.jpg",
+                    "https://images.example/rose-detail.jpg",
+                ],
             },
         )
         self.assertEqual(product.status_code, 201, product.text)
         self.assertEqual(product.json()["sellerId"], seller["id"])
+        self.assertEqual(
+            product.json()["gallery"],
+            [
+                "https://images.example/rose.jpg",
+                "https://images.example/rose-detail.jpg",
+            ],
+        )
         self.approve_seller_product(product.json()["id"])
-        replacement_image = "https://images.example/velvet-rose-replacement.jpg"
+        remaining_image = "https://images.example/rose-detail.jpg"
         image_update = self.client.put(
             f"/api/seller/products/{product.json()['id']}",
             headers=self.seller_write_headers,
@@ -773,18 +783,18 @@ class StoreApiTests(unittest.TestCase):
                 "price": 1800,
                 "stock": 8,
                 "lowStockThreshold": 2,
-                "images": [replacement_image],
+                "images": [remaining_image],
             },
         )
         self.assertEqual(image_update.status_code, 200, image_update.text)
-        self.assertEqual(image_update.json()["gallery"], [replacement_image])
+        self.assertEqual(image_update.json()["gallery"], [remaining_image])
         catalog_product = next(
             item
             for item in self.client.get("/api/products?search=Velvet%20Rose%20Oil").json()
             if item["id"] == product.json()["id"]
         )
-        self.assertEqual(catalog_product["image"], replacement_image)
-        self.assertEqual(catalog_product["gallery"], [replacement_image])
+        self.assertEqual(catalog_product["image"], remaining_image)
+        self.assertEqual(catalog_product["gallery"], [remaining_image])
         self.assertEqual(
             self.client.get(f"/api/seller/stores/{seller['store_slug']}").status_code,
             200,

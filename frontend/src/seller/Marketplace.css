@@ -3042,6 +3042,22 @@
   font-size: 10px;
 }
 
+.seller-image-previews figcaption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 5px;
+}
+
+.seller-image-remove {
+  padding: 2px 0;
+  border: 0;
+  color: #9c4d58;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
 .seller-image-previews img {
   width: 96px;
   height: 96px;

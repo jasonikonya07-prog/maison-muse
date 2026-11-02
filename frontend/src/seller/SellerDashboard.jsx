@@ -309,7 +309,22 @@ function ProductEditor({ product, onClose, onSave, onUploadImage, saving }) {
               {form.images.split(/\r?\n/).map((image) => image.trim()).filter(Boolean).map((image, index) => (
                 <figure key={`${image}-${index}`}>
                   <ProductImage src={image} alt={`Product image ${index + 1} preview`} />
-                  <figcaption>Image {index + 1}</figcaption>
+                  <figcaption>
+                    <span>Image {index + 1}</span>
+                    <button
+                      type="button"
+                      className="seller-image-remove"
+                      aria-label={`Remove product image ${index + 1}`}
+                      onClick={() => update(
+                        "images",
+                        form.images.split(/\r?\n/).map((value) => value.trim()).filter(Boolean)
+                          .filter((_, imageIndex) => imageIndex !== index)
+                          .join("\n"),
+                      )}
+                    >
+                      Remove
+                    </button>
+                  </figcaption>
                 </figure>
               ))}
             </div>
